@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.ImageView?>
+<BorderPane prefHeight="520.0" prefWidth="400.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="idea.verlif.windonly.WindonlyController">
+    <bottom>
+        <BorderPane>
+            <center>
+                <TextField fx:id="input" onMousePressed="#inputClicked"
+                           BorderPane.alignment="CENTER">
+                </TextField>
+            </center>
+            <right>
+                <BorderPane>
+                    <center>
+                        <ImageView fx:id="pinView" style="-fx-background-color: red"/>
+                    </center>
+                    <padding>
+                        <Insets left="6.0"/>
+                    </padding>
+                </BorderPane>
+            </right>
+            <BorderPane.margin>
+                <Insets top="10.0"/>
+            </BorderPane.margin>
+        </BorderPane>
+    </bottom>
+    <center>
+        <ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="400.0" prefWidth="400.0"
+                    BorderPane.alignment="CENTER">
+            <ListView fx:id="list" prefHeight="145.0" prefWidth="179.0"/>
+        </ScrollPane>
+    </center>
+    <padding>
+        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+    </padding>
+</BorderPane>
