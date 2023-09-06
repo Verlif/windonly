@@ -6,6 +6,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
@@ -32,8 +33,11 @@ public class FileOne extends BorderPane implements Item<File> {
         setPrefHeight(height);
         setPadding(ItemInsets.INSETS);
 
+        // 设置文件图标与提示文本
         setCenter(new FileIconImageView(file));
-        setBottom(createFilenameNode(file));
+        Node nameNode = createFilenameNode(file);
+        setBottom(nameNode);
+        setAlignment(nameNode, Pos.CENTER);
 
         // 设置双击打开
         setOnMouseClicked(mouseEvent -> {
@@ -46,8 +50,9 @@ public class FileOne extends BorderPane implements Item<File> {
     private Node createFilenameNode(File file) {
         Label label = new Label(file.getName());
         label.setAlignment(Pos.CENTER);
-        label.setPrefWidth(height);
         label.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
+        // 设置提示
+        label.setTooltip(new Tooltip(file.getAbsolutePath()));
         return label;
     }
 
@@ -97,11 +102,14 @@ public class FileOne extends BorderPane implements Item<File> {
                 }
             }
             if (image != null) {
+                double imageHeight = image.getHeight();
+                if (imageHeight > WindonlyConfig.getInstance().getImageSize()) {
+                    // 等比缩小
+                    setFitWidth(WindonlyConfig.getInstance().getImageSize() / imageHeight * image.getWidth());
+                    setFitHeight(WindonlyConfig.getInstance().getImageSize());
+                }
                 setImage(image);
             }
-
-            setFitWidth(WindonlyConfig.getInstance().getImageSize());
-            setFitHeight(WindonlyConfig.getInstance().getImageSize());
         }
     }
 

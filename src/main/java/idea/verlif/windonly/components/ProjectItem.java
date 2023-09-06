@@ -8,9 +8,6 @@ import javafx.scene.layout.HBox;
 
 public class ProjectItem extends HBox implements Item<Object> {
 
-    private static int nextKey = 0; // 溢出？
-    private final int key;
-
     private final Item<Object> item;
     private final Node node;
 
@@ -18,7 +15,6 @@ public class ProjectItem extends HBox implements Item<Object> {
         this.node = node;
         this.item = (Item<Object>) node;
 
-        this.key = nextKey++;
         init();
     }
 
@@ -28,7 +24,7 @@ public class ProjectItem extends HBox implements Item<Object> {
         setPadding(new Insets(4));
 
         ObservableList<Node> children = getChildren();
-        children.add(new OperateArea(key));
+        children.add(new OperateArea());
         children.add(node);
     }
 
@@ -41,10 +37,6 @@ public class ProjectItem extends HBox implements Item<Object> {
         return item.getSource();
     }
 
-    public int getKey() {
-        return key;
-    }
-
     @Override
     public boolean match(String key) {
         return item.match(key);
@@ -52,7 +44,11 @@ public class ProjectItem extends HBox implements Item<Object> {
 
     @Override
     public boolean sourceEquals(Object o) {
-        return item.sourceEquals(o);
+        if (o.getClass() == item.getSource().getClass()) {
+            return item.sourceEquals(o);
+        } else {
+            return false;
+        }
     }
 
 }

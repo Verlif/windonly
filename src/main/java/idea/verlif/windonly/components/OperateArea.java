@@ -12,11 +12,7 @@ public class OperateArea extends VBox {
 
     private static final String BUTTON_STYLE = "-fx-background-color: #bbebff;-fx-background-radius: 4";
 
-    private final int key;
-
-    public OperateArea(int key) {
-        this.key = key;
-
+    public OperateArea() {
         init();
     }
 
@@ -28,17 +24,17 @@ public class OperateArea extends VBox {
         setSpacing(4);
         // 复制
         Label copyLabel = new Label(MessageUtil.get("copy"));
-        copyLabel.setOnMouseClicked(mouseEvent -> new Message(Message.What.COPY).send(key));
+        copyLabel.setOnMouseClicked(mouseEvent -> new Message(Message.What.COPY).send(mouseEvent));
         copyLabel.setStyle(BUTTON_STYLE);
         copyLabel.setPadding(new ButtonInsets());
         // 置顶
         Label setToTop = new Label(MessageUtil.get("setToTop"));
-        setToTop.setOnMouseClicked(mouseEvent -> new Message(Message.What.SET_TO_TOP).send(key));
+        setToTop.setOnMouseClicked(mouseEvent -> new Message(Message.What.SET_TO_TOP).send(mouseEvent));
         setToTop.setStyle(BUTTON_STYLE);
         setToTop.setPadding(new ButtonInsets());
         // 删除
         Label delete = new Label(MessageUtil.get("delete"));
-        delete.setOnMouseClicked(mouseEvent -> new Message(Message.What.DELETE).send(key));
+        delete.setOnMouseClicked(mouseEvent -> new Message(Message.What.DELETE).send(mouseEvent));
         delete.setStyle(BUTTON_STYLE);
         delete.setPadding(new ButtonInsets());
 

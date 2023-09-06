@@ -3,6 +3,9 @@ package idea.verlif.windonly.components.item;
 import idea.verlif.windonly.config.WindonlyConfig;
 import javafx.geometry.Insets;
 import javafx.geometry.NodeOrientation;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 
 import java.io.File;
@@ -36,6 +39,14 @@ public class FileItem extends HBox implements Item<List<File>> {
             file.init();
         }
         getChildren().addAll(files);
+
+        // 添加拖拽处理器
+        setOnDragDetected(event -> {
+            Dragboard db = startDragAndDrop(TransferMode.COPY);
+            ClipboardContent content = new ClipboardContent();
+            content.putFiles(Arrays.stream(files).map(FileOne::getFile).toList());
+            db.setContent(content);
+        });
     }
 
     @Override
@@ -55,16 +66,9 @@ public class FileItem extends HBox implements Item<List<File>> {
 
     @Override
     public boolean sourceEquals(List<File> files) {
-        if (!files.isEmpty()) {
-            File file = files.get(0);
-            for (FileOne f : this.files) {
-                if (!f.sourceEquals(file)) {
-                    return false;
-                }
-            }
-            return true;
-        } else {
+        if (files.size() != this.files.length) {
             return false;
         }
+        return files.stream().allMatch(file -> Arrays.stream(this.files).anyMatch(fileOne -> fileOne.getFile().equals(file)));
     }
 }

@@ -2,6 +2,7 @@ package idea.verlif.windonly;
 
 import idea.verlif.windonly.components.item.FileItem;
 import idea.verlif.windonly.components.ProjectItem;
+import idea.verlif.windonly.components.item.ImageOne;
 import idea.verlif.windonly.components.item.TextItem;
 import idea.verlif.windonly.config.WindonlyConfig;
 import idea.verlif.windonly.manage.HandlerManager;
@@ -9,9 +10,7 @@ import idea.verlif.windonly.manage.inner.Handler;
 import idea.verlif.windonly.manage.inner.Message;
 import idea.verlif.windonly.utils.ClipboardUtil;
 import javafx.application.Platform;
-import javafx.event.Event;
 import javafx.event.EventHandler;
-import javafx.event.EventType;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.ListView;
@@ -34,11 +33,12 @@ public class WindonlyController implements Initializable, Serializable {
 
     public TextField input;
     public ListView<ProjectItem> list;
-    public List<ProjectItem> all;
     public ImageView pinView;
 
+    private final ProjectItemManager projectItemManager;
+
     public WindonlyController() {
-        all = new ArrayList<>();
+        projectItemManager = new ProjectItemManager();
     }
 
     @Override
@@ -50,11 +50,11 @@ public class WindonlyController implements Initializable, Serializable {
         input.textProperty().addListener((observableValue, oldVal, newVal) -> {
             if (newVal.isEmpty()) {
                 // 为空显示所有
-                list.getItems().clear();
-                list.getItems().addAll(all);
+                projectItemManager.resetProjectItems();
             } else {
                 // 有输入值时，显示过滤列表
                 list.getItems().clear();
+                List<ProjectItem> all = projectItemManager.getAll();
                 List<ProjectItem> search = new ArrayList<>(all.size());
                 for (ProjectItem item : all) {
                     if (item.match(newVal)) {
@@ -68,6 +68,7 @@ public class WindonlyController implements Initializable, Serializable {
         input.setOnKeyPressed(keyEvent -> {
             if (keyEvent.getCode() == KeyCode.ENTER && !input.getText().isEmpty()) {
                 addToList(input.getText());
+                clearInput();
             }
         });
         // 设置list
@@ -101,8 +102,7 @@ public class WindonlyController implements Initializable, Serializable {
     }
 
     private void clearList() {
-        list.getItems().clear();
-        all.clear();
+        projectItemManager.clear();
     }
 
     private void clearInput() {
@@ -118,23 +118,24 @@ public class WindonlyController implements Initializable, Serializable {
         HandlerManager.getInstance().addHandler(new Handler() {
             @Override
             public void handlerMessage(Message message) {
-                if (message.what == Message.What.COPY) {
-                    ProjectItem focusedItem = list.getFocusModel().getFocusedItem();
-                    ClipboardUtil.copyToSystemClipboard(focusedItem.getTarget());
-                } else if (message.what == Message.What.SET_TO_TOP) {
-                    ProjectItem focusedItem = list.getFocusModel().getFocusedItem();
-                    Platform.runLater(() -> {
-                        list.getItems().remove(focusedItem);
-                        all.remove(focusedItem);
-                        list.getItems().add(0, focusedItem);
-                        all.add(0, focusedItem);
-                    });
-                } else if (message.what == Message.What.DELETE) {
-                    ProjectItem focusedItem = list.getFocusModel().getFocusedItem();
-                    Platform.runLater(() -> {
-                        list.getItems().remove(focusedItem);
-                        all.remove(focusedItem);
-                    });
+                switch (message.what) {
+                    case Message.What.COPY -> {
+                        ProjectItem focusedItem = list.getFocusModel().getFocusedItem();
+                        ClipboardUtil.copyToSystemClipboard(focusedItem.getTarget());
+                    }
+                    case Message.What.DELETE -> {
+                        ProjectItem focusedItem = list.getFocusModel().getFocusedItem();
+                        Platform.runLater(() -> {
+                            projectItemManager.remove(focusedItem);
+                        });
+                    }
+                    case Message.What.SET_TO_TOP -> {
+                        ProjectItem focusedItem = list.getFocusModel().getFocusedItem();
+                        Platform.runLater(() -> {
+                            projectItemManager.remove(focusedItem);
+                            projectItemManager.add(0, focusedItem);
+                        });
+                    }
                 }
             }
         });
@@ -142,7 +143,8 @@ public class WindonlyController implements Initializable, Serializable {
 
     private void handleDragItem(Object o) {
         // 去除重复添加
-        if (!all.isEmpty() && all.get(0).sourceEquals(o)) {
+        List<ProjectItem> all = projectItemManager.getAll();
+        if (!all.isEmpty() && all.stream().anyMatch(projectItem -> projectItem.sourceEquals(o))) {
             return;
         }
         if (o instanceof List) {
@@ -150,10 +152,9 @@ public class WindonlyController implements Initializable, Serializable {
         } else if (o instanceof File) {
             addToList((File) o);
         } else if (o instanceof Image) {
-            addToList("image - " + ((Image) o).getUrl());
+            addToList((Image) o);
         } else {
             String s = o.toString();
-            // TODO: Base64处理
             addToList(s);
         }
     }
@@ -162,24 +163,28 @@ public class WindonlyController implements Initializable, Serializable {
         TextItem textItem = new TextItem(text);
         textItem.init();
         ProjectItem projectItem = new ProjectItem(textItem);
-        all.add(0, projectItem);
-        list.getItems().add(0, projectItem);
+        projectItemManager.add(0, projectItem);
     }
 
     private void addToList(List<File> files) {
         FileItem fileItem = new FileItem(files);
         fileItem.init();
         ProjectItem projectItem = new ProjectItem(fileItem);
-        all.add(0, projectItem);
-        list.getItems().add(0, projectItem);
+        projectItemManager.add(0, projectItem);
     }
 
     private void addToList(File file) {
         FileItem fileItem = new FileItem(file);
         fileItem.init();
         ProjectItem projectItem = new ProjectItem(fileItem);
-        all.add(0, projectItem);
-        list.getItems().add(0, projectItem);
+        projectItemManager.add(0, projectItem);
+    }
+
+    private void addToList(Image image) {
+        ImageOne imageOne = new ImageOne(image);
+        imageOne.init();
+        ProjectItem projectItem = new ProjectItem(imageOne);
+        projectItemManager.add(0, projectItem);
     }
 
     private final class InputOnDrag implements EventHandler<DragEvent> {
@@ -189,7 +194,11 @@ public class WindonlyController implements Initializable, Serializable {
             Dragboard dragboard = dragEvent.getDragboard();
             if (dragboard.hasFiles()) {
                 List<File> files = dragboard.getFiles();
-                input.setText(files.get(0).getName());
+                StringBuilder s = new StringBuilder();
+                for (File file : files) {
+                    s.append(file.getName()).append(";");
+                }
+                input.setText(s.substring(0, s.length() - 1));
             } else if (dragboard.hasImage()) {
                 Image image = dragboard.getImage();
                 input.setText(image.getUrl());
@@ -218,6 +227,44 @@ public class WindonlyController implements Initializable, Serializable {
             } else if (dragboard.hasUrl()) {
                 handleDragItem(dragboard.getUrl());
             }
+        }
+    }
+
+    private final class ProjectItemManager {
+
+        public final List<ProjectItem> all;
+
+        private ProjectItemManager() {
+            this.all = new ArrayList<>();
+        }
+
+        public void add(ProjectItem projectItem) {
+            list.getItems().add(projectItem);
+            this.all.add(projectItem);
+        }
+
+        public void add(int index, ProjectItem projectItem) {
+            list.getItems().add(index, projectItem);
+            this.all.add(index, projectItem);
+        }
+
+        public void remove(ProjectItem projectItem) {
+            list.getItems().remove(projectItem);
+            this.all.remove(projectItem);
+        }
+
+        public void resetProjectItems() {
+            list.getItems().clear();
+            list.getItems().addAll(this.all);
+        }
+
+        public List<ProjectItem> getAll() {
+            return all;
+        }
+
+        public void clear() {
+            list.getItems().clear();
+            this.all.clear();
         }
     }
 }
