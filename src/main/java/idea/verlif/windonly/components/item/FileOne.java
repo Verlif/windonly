@@ -50,7 +50,7 @@ public class FileOne extends BorderPane implements Item<File> {
     private Node createFilenameNode(File file) {
         Label label = new Label(file.getName());
         label.setAlignment(Pos.CENTER);
-        label.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
+        label.setFont(new Font(WindonlyConfig.getInstance().getFontSize() * 0.8));
         // 设置提示
         label.setTooltip(new Tooltip(file.getAbsolutePath()));
         return label;
