@@ -1,11 +1,7 @@
 package idea.verlif.windonly.components.item;
 
 import idea.verlif.windonly.config.WindonlyConfig;
-import javafx.geometry.Insets;
 import javafx.geometry.NodeOrientation;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 
 import java.io.File;
@@ -39,14 +35,6 @@ public class FileItem extends HBox implements Item<List<File>> {
             file.init();
         }
         getChildren().addAll(files);
-
-        // 添加拖拽处理器
-        setOnDragDetected(event -> {
-            Dragboard db = startDragAndDrop(TransferMode.COPY);
-            ClipboardContent content = new ClipboardContent();
-            content.putFiles(Arrays.stream(files).map(FileOne::getFile).toList());
-            db.setContent(content);
-        });
     }
 
     @Override

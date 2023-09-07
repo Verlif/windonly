@@ -1,14 +1,10 @@
 package idea.verlif.windonly;
 
 import idea.verlif.windonly.config.WindonlyConfig;
-import idea.verlif.windonly.manage.HandlerManager;
-import idea.verlif.windonly.manage.inner.Handler;
-import idea.verlif.windonly.manage.inner.Message;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 
 import java.io.IOException;
 

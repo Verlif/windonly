@@ -1,5 +1,9 @@
 package idea.verlif.windonly.utils;
 
+import idea.verlif.windonly.components.ProjectItem;
+import idea.verlif.windonly.components.item.FileItem;
+import idea.verlif.windonly.components.item.ImageOne;
+import idea.verlif.windonly.components.item.TextItem;
 import javafx.application.Platform;
 import javafx.scene.image.Image;
 import javafx.scene.input.Clipboard;
@@ -26,5 +30,22 @@ public class ClipboardUtil {
             Clipboard clipboard = Clipboard.getSystemClipboard();
             clipboard.setContent(content);
         });
+    }
+
+    public static Object getFormSystemClipboard() {
+        Clipboard clipboard = Clipboard.getSystemClipboard();
+        if (clipboard.hasFiles()) {
+            return clipboard.getFiles();
+        } else if (clipboard.hasImage()) {
+            return clipboard.getImage();
+        } else if (clipboard.hasHtml()) {
+            return clipboard.getHtml();
+        } else if (clipboard.hasRtf()) {
+            return clipboard.getRtf();
+        } else if (clipboard.hasUrl()) {
+            return clipboard.getUrl();
+        } else {
+            return clipboard.getString();
+        }
     }
 }

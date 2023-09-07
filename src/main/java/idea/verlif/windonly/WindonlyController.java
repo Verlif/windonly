@@ -1,23 +1,34 @@
 package idea.verlif.windonly;
 
-import idea.verlif.windonly.components.item.FileItem;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import idea.verlif.windonly.components.ProjectItem;
+import idea.verlif.windonly.components.item.FileItem;
 import idea.verlif.windonly.components.item.ImageOne;
 import idea.verlif.windonly.components.item.TextItem;
 import idea.verlif.windonly.config.WindonlyConfig;
+import idea.verlif.windonly.data.Archive;
+import idea.verlif.windonly.data.Savable;
 import idea.verlif.windonly.manage.HandlerManager;
 import idea.verlif.windonly.manage.inner.Handler;
 import idea.verlif.windonly.manage.inner.Message;
 import idea.verlif.windonly.utils.ClipboardUtil;
+import idea.verlif.windonly.utils.MessageUtil;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Insets;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.*;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.text.Font;
 
 import java.io.File;
@@ -34,8 +45,10 @@ public class WindonlyController implements Initializable, Serializable {
     public TextField input;
     public ListView<ProjectItem> list;
     public ImageView pinView;
+    public ChoiceBox<String> archiveBox;
 
     private final ProjectItemManager projectItemManager;
+    private Archive nowArchive;
 
     public WindonlyController() {
         projectItemManager = new ProjectItemManager();
@@ -46,7 +59,7 @@ public class WindonlyController implements Initializable, Serializable {
         input.setPrefHeight(WindonlyConfig.getInstance().getFontSize() + 8);
         input.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
         input.setOnDragEntered(new InputOnDrag());
-        // 搜索
+        // 添加搜索监听
         input.textProperty().addListener((observableValue, oldVal, newVal) -> {
             if (newVal.isEmpty()) {
                 // 为空显示所有
@@ -64,15 +77,27 @@ public class WindonlyController implements Initializable, Serializable {
                 list.getItems().addAll(search);
             }
         });
-        // 添加输入
+        // 添加输入事项
         input.setOnKeyPressed(keyEvent -> {
             if (keyEvent.getCode() == KeyCode.ENTER && !input.getText().isEmpty()) {
-                addToList(input.getText());
+                handleDragItem(input.getText());
                 clearInput();
+            }
+        });
+        // 对CtrlV特殊处理
+        input.setOnKeyPressed(keyEvent -> {
+            if (keyEvent.isControlDown() && keyEvent.getCode() == KeyCode.V) {
+                Platform.runLater(() -> {
+                    Object o = ClipboardUtil.getFormSystemClipboard();
+                    if (!(o instanceof String)) {
+                        handleDragItem(o);
+                    }
+                });
             }
         });
         // 设置list
         list.setFocusTraversable(false);
+        // 设置数据展示区拖入事件
         list.setOnDragEntered(new ListOnDrag());
         // 设置pin
         pinView.setFitHeight(WindonlyConfig.getInstance().getFontSize());
@@ -82,8 +107,28 @@ public class WindonlyController implements Initializable, Serializable {
             WindonlyConfig.getInstance().setAlwaysShow(!WindonlyConfig.getInstance().isAlwaysShow());
             switchPin(WindonlyConfig.getInstance().isAlwaysShow());
         });
+        // 初始化工作区存档
+        refreshArchiveBox();
+        archiveBox.setPrefHeight(input.getPrefHeight());
+        archiveBox.setPadding(new Insets(4, 0, 5, 0));
+        archiveBox.valueProperty().addListener((observableValue, oldVal, newVal) -> {
+            if (newVal.equals(MessageUtil.get("newArchive"))) {
+                System.out.println("新工作区");
+            } else {
+                load(newVal);
+            }
+        });
+        // 加载最近打开的工作区
+        archiveBox.setValue(Archive.getCurrentArchive());
 
+        // 注册监听
         registerHandler();
+    }
+
+    private void refreshArchiveBox() {
+        archiveBox.getItems().clear();
+        archiveBox.getItems().addAll(Archive.allArchives());
+        archiveBox.getItems().add(MessageUtil.get("newArchive"));
     }
 
     private void switchPin(boolean pin) {
@@ -95,6 +140,18 @@ public class WindonlyController implements Initializable, Serializable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void load(String archive) {
+        nowArchive = new Archive(archive);
+        nowArchive.load(WindonlyConfig.getInstance());
+        nowArchive.load(projectItemManager);
+        Archive.setCurrentArchive(archive);
+    }
+
+    private void save() {
+        nowArchive.save(WindonlyConfig.getInstance());
+        nowArchive.save(projectItemManager);
     }
 
     @FXML
@@ -109,11 +166,9 @@ public class WindonlyController implements Initializable, Serializable {
         input.setText("");
     }
 
-    private void clear() {
-        clearInput();
-        clearList();
-    }
-
+    /**
+     * 注册需要处理的信息
+     */
     private void registerHandler() {
         HandlerManager.getInstance().addHandler(new Handler() {
             @Override
@@ -121,7 +176,7 @@ public class WindonlyController implements Initializable, Serializable {
                 switch (message.what) {
                     case Message.What.COPY -> {
                         ProjectItem focusedItem = list.getFocusModel().getFocusedItem();
-                        ClipboardUtil.copyToSystemClipboard(focusedItem.getTarget());
+                        ClipboardUtil.copyToSystemClipboard(focusedItem.getSource());
                     }
                     case Message.What.DELETE -> {
                         ProjectItem focusedItem = list.getFocusModel().getFocusedItem();
@@ -136,54 +191,49 @@ public class WindonlyController implements Initializable, Serializable {
                             projectItemManager.add(0, focusedItem);
                         });
                     }
+                    case Message.What.QUICK_PASTE -> {
+                        Platform.runLater(() -> {
+                            handleDragItem(message.getObj());
+                        });
+                    }
                 }
             }
         });
     }
 
+    /**
+     * 处理拖拽进入的数据
+     *
+     * @param o 数据对象
+     */
     private void handleDragItem(Object o) {
         // 去除重复添加
         List<ProjectItem> all = projectItemManager.getAll();
         if (!all.isEmpty() && all.stream().anyMatch(projectItem -> projectItem.sourceEquals(o))) {
             return;
         }
+        ProjectItem projectItem;
         if (o instanceof List) {
-            addToList((List<File>) o);
+            FileItem fileItem = new FileItem((List<File>) o);
+            fileItem.init();
+            projectItem = new ProjectItem(fileItem);
         } else if (o instanceof File) {
-            addToList((File) o);
+            FileItem fileItem = new FileItem((File) o);
+            fileItem.init();
+            projectItem = new ProjectItem(fileItem);
         } else if (o instanceof Image) {
-            addToList((Image) o);
+            if (((Image) o).getUrl() != null) {
+                ImageOne imageOne = new ImageOne((Image) o);
+                imageOne.init();
+                projectItem = new ProjectItem(imageOne);
+            } else {
+                return;
+            }
         } else {
-            String s = o.toString();
-            addToList(s);
+            TextItem textItem = new TextItem(o.toString());
+            textItem.init();
+            projectItem = new ProjectItem(textItem);
         }
-    }
-
-    private void addToList(String text) {
-        TextItem textItem = new TextItem(text);
-        textItem.init();
-        ProjectItem projectItem = new ProjectItem(textItem);
-        projectItemManager.add(0, projectItem);
-    }
-
-    private void addToList(List<File> files) {
-        FileItem fileItem = new FileItem(files);
-        fileItem.init();
-        ProjectItem projectItem = new ProjectItem(fileItem);
-        projectItemManager.add(0, projectItem);
-    }
-
-    private void addToList(File file) {
-        FileItem fileItem = new FileItem(file);
-        fileItem.init();
-        ProjectItem projectItem = new ProjectItem(fileItem);
-        projectItemManager.add(0, projectItem);
-    }
-
-    private void addToList(Image image) {
-        ImageOne imageOne = new ImageOne(image);
-        imageOne.init();
-        ProjectItem projectItem = new ProjectItem(imageOne);
         projectItemManager.add(0, projectItem);
     }
 
@@ -230,7 +280,10 @@ public class WindonlyController implements Initializable, Serializable {
         }
     }
 
-    private final class ProjectItemManager {
+    /**
+     * 项目条目管理器
+     */
+    private final class ProjectItemManager implements Savable<String> {
 
         public final List<ProjectItem> all;
 
@@ -241,21 +294,25 @@ public class WindonlyController implements Initializable, Serializable {
         public void add(ProjectItem projectItem) {
             list.getItems().add(projectItem);
             this.all.add(projectItem);
+            WindonlyController.this.save();
         }
 
         public void add(int index, ProjectItem projectItem) {
             list.getItems().add(index, projectItem);
             this.all.add(index, projectItem);
+            WindonlyController.this.save();
         }
 
         public void remove(ProjectItem projectItem) {
             list.getItems().remove(projectItem);
             this.all.remove(projectItem);
+            WindonlyController.this.save();
         }
 
         public void resetProjectItems() {
             list.getItems().clear();
             list.getItems().addAll(this.all);
+            WindonlyController.this.save();
         }
 
         public List<ProjectItem> getAll() {
@@ -265,6 +322,111 @@ public class WindonlyController implements Initializable, Serializable {
         public void clear() {
             list.getItems().clear();
             this.all.clear();
+            WindonlyController.this.save();
         }
+
+        @Override
+        public String save() {
+            ObjectMapper mapper = new ObjectMapper();
+            List<ProjectItemData> list = new ArrayList<>();
+            for (ProjectItem projectItem : projectItemManager.all) {
+                ProjectItemData data;
+                if (projectItem.getType() == ProjectItem.Type.FILE) {
+                    data = new ProjectItemData(projectItem.getType(), ((File) projectItem.getSource()).getAbsolutePath());
+                } else if (projectItem.getType() == ProjectItem.Type.FILES) {
+                    List<File> source = (List<File>) projectItem.getSource();
+                    StringBuilder s = new StringBuilder();
+                    for (File file : source) {
+                        s.append(file.getAbsoluteFile()).append(",");
+                    }
+                    data = new ProjectItemData(projectItem.getType(), s.substring(0, s.length() - 1));
+                } else if (projectItem.getType() == ProjectItem.Type.IMAGE) {
+                    data = new ProjectItemData(projectItem.getType(), ((Image) projectItem.getSource()).getUrl());
+                } else {
+                    data = new ProjectItemData(projectItem.getType(), projectItem.getSource().toString());
+                }
+                list.add(data);
+            }
+            try {
+                return mapper.writerWithDefaultPrettyPrinter()
+                        .writeValueAsString(list);
+            } catch (JsonProcessingException e) {
+                return "";
+            }
+        }
+
+        @Override
+        public void load(String s) {
+            clear();
+            if (s != null && !s.isEmpty()) {
+                ObjectMapper mapper = new ObjectMapper();
+                try {
+                    JavaType javaType = mapper.getTypeFactory().constructParametricType(List.class, ProjectItemData.class);
+                    List<ProjectItemData> list = mapper.readValue(s, javaType);
+                    // 反向装载
+                    for (int i = list.size() - 1; i > -1; i--) {
+                        ProjectItemData projectItem = list.get(i);
+                        if (projectItem.type == ProjectItem.Type.FILE) {
+                            handleDragItem(new File(projectItem.getSource()));
+                        } else if (projectItem.type == ProjectItem.Type.FILES) {
+                            String filePaths = projectItem.getSource();
+                            List<File> files = new ArrayList<>();
+                            for (String string : filePaths.split(",")) {
+                                files.add(new File(string));
+                            }
+                            handleDragItem(files);
+                        } else if (projectItem.type == ProjectItem.Type.IMAGE) {
+                            handleDragItem(new Image(projectItem.getSource()));
+                        } else {
+                            handleDragItem(projectItem.source);
+                        }
+                    }
+                } catch (JsonProcessingException ignored) {
+                }
+            }
+        }
+
+        public static final class ProjectItemData implements Serializable {
+            private ProjectItem.Type type;
+            private String source;
+
+            public ProjectItemData() {
+            }
+
+            private ProjectItemData(ProjectItem.Type type, String source) {
+                this.type = type;
+                this.source = source;
+            }
+
+            public ProjectItem.Type getType() {
+                return type;
+            }
+
+            public void setType(ProjectItem.Type type) {
+                this.type = type;
+            }
+
+            public String getSource() {
+                return source;
+            }
+
+            public void setSource(String source) {
+                this.source = source;
+            }
+        }
+    }
+
+    private static final class CtrlListener {
+
+        private boolean ctrlDown;
+
+        public boolean isCtrlDown() {
+            return ctrlDown;
+        }
+
+        public void setCtrlDown(boolean ctrlDown) {
+            this.ctrlDown = ctrlDown;
+        }
+
     }
 }
