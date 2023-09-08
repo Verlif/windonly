@@ -13,6 +13,7 @@ public class Message implements Serializable {
         int QUICK_PASTE = 1003;
 
         int WINDOW_PIN = 2001;
+        int ARCHIVE_LOCK = 2002;
     }
 
     /**

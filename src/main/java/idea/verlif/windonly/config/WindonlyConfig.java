@@ -63,6 +63,7 @@ public class WindonlyConfig implements Savable<String> {
 
     public void setLock(boolean lock) {
         this.lock = lock;
+        new Message(Message.What.ARCHIVE_LOCK).send();
     }
 
     @Override

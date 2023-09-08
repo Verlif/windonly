@@ -28,6 +28,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
 
 import java.io.File;
@@ -43,7 +45,9 @@ public class WindonlyController implements Initializable, Serializable {
 
     public TextField input;
     public ListView<ProjectItem> list;
+    public ImageView lockView;
     public ImageView pinView;
+    public BorderPane center;
     public ChoiceBox<String> archiveBox;
 
     private final ProjectItemManager projectItemManager;
@@ -106,12 +110,25 @@ public class WindonlyController implements Initializable, Serializable {
             boolean alwaysShow = WindonlyConfig.getInstance().isAlwaysShow();
             WindonlyConfig.getInstance().setAlwaysShow(!alwaysShow);
         });
+        // 设置锁
+        lockView.setFitHeight(pinView.getFitHeight());
+        lockView.setFitWidth(pinView.getFitWidth());
+        switchLock(WindonlyConfig.getInstance().isLock());
+        lockView.getParent().setOnMouseClicked(mouseEvent -> {
+            boolean lock = WindonlyConfig.getInstance().isLock();
+            WindonlyConfig.getInstance().setLock(!lock);
+        });
         // 工作区设定
         archiveBox.setPrefHeight(input.getPrefHeight());
         archiveBox.setPrefWidth(100 * WindonlyConfig.getInstance().getMagnification());
         archiveBox.setPadding(new Insets(4, 0, 5, 0));
         archiveBox.valueProperty().addListener((observableValue, oldVal, newVal) -> {
-            load(newVal);
+            if (WindonlyConfig.getInstance().isLock()) {
+                showTip(MessageUtil.get("notChangeArchiveWhenLocked"));
+                archiveBox.setValue(Archive.getCurrentArchive());
+            } else {
+                load(newVal);
+            }
         });
         // 初始化工作区存档
         refreshArchiveBox();
@@ -190,6 +207,19 @@ public class WindonlyController implements Initializable, Serializable {
         return new ContextMenu(newArchive, renameArchive, delArchive, refreshArchive);
     }
 
+    private void showTip(String text) {
+        Label tip = new Label(text);
+        tip.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
+        tip.setOnMouseClicked(mouseEvent -> closeTip());
+        BorderPane pane = new BorderPane();
+        pane.setCenter(tip);
+        center.setBottom(pane);
+    }
+
+    private void closeTip() {
+        center.setBottom(null);
+    }
+
     /**
      * 切换窗口置顶开关
      *
@@ -199,6 +229,16 @@ public class WindonlyController implements Initializable, Serializable {
         try (InputStream resourceAsStream = getClass().getResourceAsStream(pin ? "/images/pin.png" : "/images/unpin.png")) {
             if (resourceAsStream != null) {
                 pinView.setImage(new Image(resourceAsStream));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void switchLock(boolean lock) {
+        try (InputStream resourceAsStream = getClass().getResourceAsStream(lock ? "/images/lock.png" : "/images/unlock.png")) {
+            if (resourceAsStream != null) {
+                lockView.setImage(new Image(resourceAsStream));
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -266,6 +306,11 @@ public class WindonlyController implements Initializable, Serializable {
                     case Message.What.WINDOW_PIN -> {
                         Platform.runLater(() -> {
                             switchPin(WindonlyConfig.getInstance().isAlwaysShow());
+                        });
+                    }
+                    case Message.What.ARCHIVE_LOCK -> {
+                        Platform.runLater(() -> {
+                            switchLock(WindonlyConfig.getInstance().isLock());
                         });
                     }
                 }
@@ -364,21 +409,27 @@ public class WindonlyController implements Initializable, Serializable {
         }
 
         public void add(ProjectItem projectItem) {
-            list.getItems().add(projectItem);
-            this.all.add(projectItem);
-            WindonlyController.this.save();
+            if (checkAccess()) {
+                list.getItems().add(projectItem);
+                this.all.add(projectItem);
+                WindonlyController.this.save();
+            }
         }
 
         public void add(int index, ProjectItem projectItem) {
-            list.getItems().add(index, projectItem);
-            this.all.add(index, projectItem);
-            WindonlyController.this.save();
+            if (checkAccess()) {
+                list.getItems().add(index, projectItem);
+                this.all.add(index, projectItem);
+                WindonlyController.this.save();
+            }
         }
 
         public void remove(ProjectItem projectItem) {
-            list.getItems().remove(projectItem);
-            this.all.remove(projectItem);
-            WindonlyController.this.save();
+            if (checkAccess()) {
+                list.getItems().remove(projectItem);
+                this.all.remove(projectItem);
+                WindonlyController.this.save();
+            }
         }
 
         public void resetProjectItems() {
@@ -392,9 +443,19 @@ public class WindonlyController implements Initializable, Serializable {
         }
 
         public void clear() {
-            list.getItems().clear();
-            this.all.clear();
-            WindonlyController.this.save();
+            if (checkAccess()) {
+                list.getItems().clear();
+                this.all.clear();
+            }
+        }
+
+        private boolean checkAccess() {
+            if (WindonlyConfig.getInstance().isLock()) {
+                showTip(MessageUtil.get("notModifyArchiveWhenLocked"));
+                return false;
+            } else {
+                return true;
+            }
         }
 
         @Override
