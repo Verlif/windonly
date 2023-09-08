@@ -11,6 +11,8 @@ public class Message implements Serializable {
         int SET_TO_TOP = 1001;
         int DELETE = 1002;
         int QUICK_PASTE = 1003;
+
+        int WINDOW_PIN = 2001;
     }
 
     /**

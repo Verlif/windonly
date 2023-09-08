@@ -33,12 +33,38 @@ public class OperateArea extends VBox {
         setToTop.setStyle(BUTTON_STYLE);
         setToTop.setPadding(new ButtonInsets());
         // 删除
-        Label delete = new Label(MessageUtil.get("delete"));
-        delete.setOnMouseClicked(mouseEvent -> new Message(Message.What.DELETE).send(mouseEvent));
-        delete.setStyle(BUTTON_STYLE);
-        delete.setPadding(new ButtonInsets());
+        Label delete = new DeleteButton();
 
         getChildren().addAll(copyLabel, setToTop, delete);
+    }
+
+    private static final class DeleteButton extends Label {
+
+        private boolean confirmDelete;
+
+        public DeleteButton() {
+            super(MessageUtil.get("delete"));
+            setOnMouseClicked(mouseEvent -> {
+                if (confirmDelete) {
+                    new Message(Message.What.DELETE).send(mouseEvent);
+                } else {
+                    requestDelete();
+                }
+            });
+            setOnMouseExited(mouseEvent -> reset());
+            setStyle(BUTTON_STYLE);
+            setPadding(new ButtonInsets());
+        }
+
+        private void requestDelete() {
+            confirmDelete = true;
+            setStyle("-fx-background-color: #ff5858;;-fx-background-radius: 4");
+        }
+
+        private void reset() {
+            confirmDelete = false;
+            setStyle(BUTTON_STYLE);
+        }
     }
 
     private static final class ButtonInsets extends Insets {
