@@ -7,12 +7,27 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Label?>
 <BorderPane prefHeight="520.0" prefWidth="400.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="idea.verlif.windonly.WindonlyController">
     <bottom>
         <BorderPane>
             <left>
-                <ChoiceBox fx:id="archiveBox"/>
+                <BorderPane>
+                    <left>
+                        <BorderPane>
+                            <center>
+                                <ImageView fx:id="lockView"/>
+                            </center>
+                            <padding>
+                                <Insets left="2.0" right="2.0"/>
+                            </padding>
+                        </BorderPane>
+                    </left>
+                    <center>
+                        <ChoiceBox fx:id="archiveBox"/>
+                    </center>
+                </BorderPane>
             </left>
             <center>
                 <TextField fx:id="input" onMousePressed="#inputClicked"
@@ -22,7 +37,7 @@
             <right>
                 <BorderPane>
                     <center>
-                        <ImageView fx:id="pinView" style="-fx-background-color: red"/>
+                        <ImageView fx:id="pinView"/>
                     </center>
                     <padding>
                         <Insets left="6.0"/>
@@ -35,10 +50,14 @@
         </BorderPane>
     </bottom>
     <center>
-        <ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="400.0" prefWidth="400.0"
-                    BorderPane.alignment="CENTER">
-            <ListView fx:id="list" prefHeight="145.0" prefWidth="179.0"/>
-        </ScrollPane>
+        <BorderPane fx:id="center">
+            <center>
+                <ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="400.0" prefWidth="400.0"
+                            BorderPane.alignment="CENTER">
+                    <ListView fx:id="list" prefHeight="145.0" prefWidth="179.0"/>
+                </ScrollPane>
+            </center>
+        </BorderPane>
     </center>
     <padding>
         <Insets bottom="4.0" left="4.0" right="4.0" top="4.0"/>
