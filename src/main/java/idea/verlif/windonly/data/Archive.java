@@ -101,12 +101,22 @@ public class Archive implements Serializable {
     }
 
     public static String getCurrentArchive() {
+        if (SETTINGS.currentArchive == null) {
+            SETTINGS.currentArchive = allArchives().get(0);
+        }
         return SETTINGS.currentArchive;
     }
 
     public static void setCurrentArchive(String archive) {
         SETTINGS.setCurrentArchive(archive);
 
+    }
+
+    public static void delArchive(String archive) {
+        FileUtil.deleteFile(new File(getArchivePath(archive)));
+        if (archive.equals(SETTINGS.currentArchive)) {
+            SETTINGS.currentArchive = allArchives().get(0);
+        }
     }
 
     /**
@@ -131,6 +141,19 @@ public class Archive implements Serializable {
             list.add(SETTINGS.currentArchive);
         }
         return list;
+    }
+
+    public static boolean newArchive(String archive) {
+        File file = new File(SETTINGS.archivePath, archive);
+        return !file.exists() && file.mkdirs();
+    }
+
+    public static boolean renameArchive(String source, String target) {
+        File file = new File(SETTINGS.archivePath, source);
+        if (file.exists()) {
+            return file.renameTo(new File(SETTINGS.archivePath, target));
+        }
+        return false;
     }
 
     public static final class Settings implements Serializable {

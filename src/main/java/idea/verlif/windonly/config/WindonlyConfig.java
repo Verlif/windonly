@@ -2,7 +2,9 @@ package idea.verlif.windonly.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import idea.verlif.windonly.WindonlyApplication;
 import idea.verlif.windonly.data.Savable;
+import idea.verlif.windonly.manage.inner.Message;
 
 public class WindonlyConfig implements Savable<String> {
 
@@ -21,6 +23,10 @@ public class WindonlyConfig implements Savable<String> {
     private double magnification = 1.0;
     // 是否置顶窗口
     private boolean alwaysShow = true;
+    /**
+     * 数据锁定，不允许数据更改，不允许删除工作区
+     */
+    private boolean lock = false;
 
     public double getFontSize() {
         return fontSize * magnification;
@@ -48,6 +54,15 @@ public class WindonlyConfig implements Savable<String> {
 
     public void setAlwaysShow(boolean alwaysShow) {
         this.alwaysShow = alwaysShow;
+        new Message(Message.What.WINDOW_PIN).send();
+    }
+
+    public boolean isLock() {
+        return lock;
+    }
+
+    public void setLock(boolean lock) {
+        this.lock = lock;
     }
 
     @Override
@@ -70,6 +85,7 @@ public class WindonlyConfig implements Savable<String> {
                 setAlwaysShow(windonlyConfig.alwaysShow);
                 setMagnification(windonlyConfig.magnification);
                 setFontSize(windonlyConfig.fontSize);
+                setLock(windonlyConfig.lock);
             } catch (JsonProcessingException ignored) {
             }
         }
