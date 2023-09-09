@@ -7,9 +7,8 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.control.Label?>
 <BorderPane prefHeight="520.0" prefWidth="400.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="idea.verlif.windonly.WindonlyController">
+            fx:controller="idea.verlif.windonly.WindonlyController" onMouseMoved="#onMouseMoved" onMouseExited="#onMouseExited">
     <bottom>
         <BorderPane>
             <left>
@@ -35,14 +34,24 @@
                 </TextField>
             </center>
             <right>
-                <BorderPane>
-                    <center>
-                        <ImageView fx:id="pinView"/>
-                    </center>
-                    <padding>
-                        <Insets left="6.0"/>
-                    </padding>
-                </BorderPane>
+                <HBox>
+                    <BorderPane>
+                        <center>
+                            <ImageView fx:id="pinView"/>
+                        </center>
+                        <padding>
+                            <Insets left="6.0"/>
+                        </padding>
+                    </BorderPane>
+                    <BorderPane>
+                        <center>
+                            <ImageView fx:id="slideView"/>
+                        </center>
+                        <padding>
+                            <Insets left="6.0"/>
+                        </padding>
+                    </BorderPane>
+                </HBox>
             </right>
             <BorderPane.margin>
                 <Insets top="4.0"/>
@@ -50,7 +59,7 @@
         </BorderPane>
     </bottom>
     <center>
-        <BorderPane fx:id="center">
+        <BorderPane fx:id="center" onMouseMoved="#onMouseMoved">
             <center>
                 <ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="400.0" prefWidth="400.0"
                             BorderPane.alignment="CENTER">
@@ -60,6 +69,6 @@
         </BorderPane>
     </center>
     <padding>
-        <Insets bottom="4.0" left="4.0" right="4.0" top="4.0"/>
+        <Insets bottom="4.0" left="4.0" right="4.0"/>
     </padding>
 </BorderPane>

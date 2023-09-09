@@ -21,9 +21,13 @@ public class HandlerManager {
         handlerHashMap = new HashMap<>();
         executor = new ThreadPoolExecutor(
                 4, 4,
-                10, TimeUnit.SECONDS,
+                1, TimeUnit.SECONDS,
                 new ArrayBlockingQueue<>(99),
-                r -> new Thread(r));
+                r -> {
+                    Thread thread = new Thread(r);
+                    thread.setDaemon(true);
+                    return thread;
+                });
     }
 
     public static HandlerManager getInstance() {
