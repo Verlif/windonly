@@ -1,0 +1,14 @@
+package idea.verlif.windonly.utils;
+
+import javafx.geometry.Rectangle2D;
+import javafx.stage.Screen;
+
+public class ScreenUtil {
+
+    public static double[] getScreenSize() {
+        Rectangle2D screenRectangle = Screen.getPrimary().getBounds();
+        double width = screenRectangle.getWidth();
+        double height = screenRectangle.getHeight();
+        return new double[]{width, height};
+    }
+}

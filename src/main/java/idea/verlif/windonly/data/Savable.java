@@ -1,6 +1,8 @@
 package idea.verlif.windonly.data;
 
-public interface Savable<T> {
+import java.io.Serializable;
+
+public interface Savable<T> extends Serializable {
 
     T save();
 

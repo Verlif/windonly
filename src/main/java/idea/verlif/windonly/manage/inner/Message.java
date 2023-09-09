@@ -7,13 +7,20 @@ import java.io.Serializable;
 public class Message implements Serializable {
 
     public interface What {
+        int ARCHIVE_SAVE = 0;
+        int CONFIG_SAVE = 1;
+
         int COPY = 1000;
         int SET_TO_TOP = 1001;
         int DELETE = 1002;
         int QUICK_PASTE = 1003;
 
         int WINDOW_PIN = 2001;
-        int ARCHIVE_LOCK = 2002;
+        int WINDOW_SLIDE_OUT = 2002;
+        int WINDOW_SLIDE_IN = 2003;
+        int WINDOW_SLIDE = 2004;
+
+        int ARCHIVE_LOCK = 3002;
     }
 
     /**

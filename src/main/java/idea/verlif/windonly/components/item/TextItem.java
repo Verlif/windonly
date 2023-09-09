@@ -1,5 +1,6 @@
 package idea.verlif.windonly.components.item;
 
+import idea.verlif.windonly.components.alert.TextAlert;
 import idea.verlif.windonly.config.WindonlyConfig;
 import javafx.scene.control.Label;
 import javafx.scene.text.Font;
@@ -20,6 +21,12 @@ public class TextItem extends Label implements Item<String> {
         setMaxWidth(3000);
         // 自动换行
         setStyle("-fx-wrap-text: true");
+
+        setOnMouseClicked(mouseEvent -> {
+            if (mouseEvent.getClickCount() > 1) {
+                new TextAlert(text).show();
+            }
+        });
     }
 
     @Override

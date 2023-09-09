@@ -17,6 +17,7 @@ import idea.verlif.windonly.manage.inner.Handler;
 import idea.verlif.windonly.manage.inner.Message;
 import idea.verlif.windonly.utils.ClipboardUtil;
 import idea.verlif.windonly.utils.MessageUtil;
+import idea.verlif.windonly.utils.ScreenUtil;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -28,8 +29,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
 
 import java.io.File;
@@ -38,6 +39,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -47,6 +49,7 @@ public class WindonlyController implements Initializable, Serializable {
     public ListView<ProjectItem> list;
     public ImageView lockView;
     public ImageView pinView;
+    public ImageView slideView;
     public BorderPane center;
     public ChoiceBox<String> archiveBox;
 
@@ -59,8 +62,6 @@ public class WindonlyController implements Initializable, Serializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        input.setPrefHeight(WindonlyConfig.getInstance().getFontSize() + 8);
-        input.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
         input.setOnDragEntered(new InputOnDrag());
         // 添加搜索监听
         input.textProperty().addListener((observableValue, oldVal, newVal) -> {
@@ -103,42 +104,49 @@ public class WindonlyController implements Initializable, Serializable {
         // 设置数据展示区拖入事件
         list.setOnDragEntered(new ListOnDrag());
         // 设置pin
-        pinView.setFitHeight(WindonlyConfig.getInstance().getFontSize());
-        pinView.setFitWidth(WindonlyConfig.getInstance().getFontSize());
-        switchPin(WindonlyConfig.getInstance().isAlwaysShow());
         pinView.getParent().setOnMouseClicked(mouseEvent -> {
             boolean alwaysShow = WindonlyConfig.getInstance().isAlwaysShow();
             WindonlyConfig.getInstance().setAlwaysShow(!alwaysShow);
         });
         // 设置锁
-        lockView.setFitHeight(pinView.getFitHeight());
-        lockView.setFitWidth(pinView.getFitWidth());
-        switchLock(WindonlyConfig.getInstance().isLock());
         lockView.getParent().setOnMouseClicked(mouseEvent -> {
             boolean lock = WindonlyConfig.getInstance().isLock();
             WindonlyConfig.getInstance().setLock(!lock);
         });
+        // 设置贴边收起
+        slideView.getParent().setOnMouseClicked(mouseEvent -> {
+            boolean slide = WindonlyConfig.getInstance().isSlide();
+            WindonlyConfig.getInstance().setSlide(!slide);
+        });
         // 工作区设定
-        archiveBox.setPrefHeight(input.getPrefHeight());
-        archiveBox.setPrefWidth(100 * WindonlyConfig.getInstance().getMagnification());
         archiveBox.setPadding(new Insets(4, 0, 5, 0));
         archiveBox.valueProperty().addListener((observableValue, oldVal, newVal) -> {
-            if (WindonlyConfig.getInstance().isLock()) {
-                showTip(MessageUtil.get("notChangeArchiveWhenLocked"));
-                archiveBox.setValue(Archive.getCurrentArchive());
-            } else {
-                load(newVal);
-            }
+            // 保存当前的数据
+            save();
+            load(newVal);
         });
-        // 初始化工作区存档
-        refreshArchiveBox();
         // 增加快捷方式
         archiveBox.setContextMenu(createArchiveMenu());
-        // 切换到回当前分区
-        selectArchive(Archive.getCurrentArchive());
-
+        // 初始化工作区存档
+        refreshArchiveBox();
         // 注册监听
         registerHandler();
+        // 切换到回当前分区
+        selectArchive(Archive.getCurrentArchive());
+        switchPin(WindonlyConfig.getInstance().isAlwaysShow());
+        switchSlide(WindonlyConfig.getInstance().isSlide());
+
+        // 设置样式
+        input.setPrefHeight(WindonlyConfig.getInstance().getFontSize() + 8);
+        input.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
+        pinView.setFitHeight(WindonlyConfig.getInstance().getFontSize());
+        pinView.setFitWidth(WindonlyConfig.getInstance().getFontSize());
+        lockView.setFitHeight(pinView.getFitHeight());
+        lockView.setFitWidth(pinView.getFitWidth());
+        slideView.setFitHeight(pinView.getFitHeight());
+        slideView.setFitWidth(pinView.getFitWidth());
+        archiveBox.setPrefHeight(input.getPrefHeight());
+        archiveBox.setPrefWidth(100 * WindonlyConfig.getInstance().getMagnification());
     }
 
     private void refreshArchiveBox() {
@@ -186,15 +194,17 @@ public class WindonlyController implements Initializable, Serializable {
         // 删除工作区
         MenuItem delArchive = new MenuItem(MessageUtil.get("delArchive"));
         delArchive.setOnAction(actionEvent -> {
-            new ConfirmAlert(MessageUtil.get("delArchive") + " - " + Archive.getCurrentArchive()) {
-                @Override
-                public void confirm() {
-                    Archive.delArchive(Archive.getCurrentArchive());
-                    refreshArchiveBox();
-                    // 切换到回当前分区
-                    selectArchive(Archive.allArchives().get(0));
-                }
-            }.show();
+            if (checkAccess()) {
+                new ConfirmAlert(MessageUtil.get("delArchive") + " - " + Archive.getCurrentArchive()) {
+                    @Override
+                    public void confirm() {
+                        Archive.delArchive(Archive.getCurrentArchive());
+                        refreshArchiveBox();
+                        // 切换到回当前分区
+                        selectArchive(Archive.allArchives().get(0));
+                    }
+                }.show();
+            }
         });
         // 刷新工作区列表
         MenuItem refreshArchive = new MenuItem(MessageUtil.get("refreshArchiveList"));
@@ -245,6 +255,16 @@ public class WindonlyController implements Initializable, Serializable {
         }
     }
 
+    private void switchSlide(boolean slide) {
+        try (InputStream resourceAsStream = getClass().getResourceAsStream(slide ? "/images/slide.png" : "/images/unslide.png")) {
+            if (resourceAsStream != null) {
+                slideView.setImage(new Image(resourceAsStream));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * 加载工作区存档
      *
@@ -261,12 +281,9 @@ public class WindonlyController implements Initializable, Serializable {
      * 保存工作区信息
      */
     private void save() {
-        nowArchive.save(WindonlyConfig.getInstance());
-        nowArchive.save(projectItemManager);
-    }
-
-    @FXML
-    protected void inputClicked() {
+        if (nowArchive != null) {
+            nowArchive.save(projectItemManager);
+        }
     }
 
     private void clearInput() {
@@ -288,14 +305,15 @@ public class WindonlyController implements Initializable, Serializable {
                     case Message.What.DELETE -> {
                         ProjectItem focusedItem = list.getFocusModel().getFocusedItem();
                         Platform.runLater(() -> {
-                            projectItemManager.remove(focusedItem);
+                            removeItem(focusedItem, true);
+                            save();
                         });
                     }
                     case Message.What.SET_TO_TOP -> {
                         ProjectItem focusedItem = list.getFocusModel().getFocusedItem();
                         Platform.runLater(() -> {
-                            projectItemManager.remove(focusedItem);
-                            projectItemManager.add(0, focusedItem);
+                            topItem(focusedItem, true);
+                            save();
                         });
                     }
                     case Message.What.QUICK_PASTE -> {
@@ -303,23 +321,17 @@ public class WindonlyController implements Initializable, Serializable {
                             handleDragItem(message.getObj());
                         });
                     }
-                    case Message.What.WINDOW_PIN -> {
-                        Platform.runLater(() -> {
-                            switchPin(WindonlyConfig.getInstance().isAlwaysShow());
-                        });
-                    }
-                    case Message.What.ARCHIVE_LOCK -> {
-                        Platform.runLater(() -> {
-                            switchLock(WindonlyConfig.getInstance().isLock());
-                        });
-                    }
+                    case Message.What.WINDOW_PIN -> Platform.runLater(() -> switchPin(WindonlyConfig.getInstance().isAlwaysShow()));
+                    case Message.What.ARCHIVE_LOCK -> Platform.runLater(() -> switchLock(WindonlyConfig.getInstance().isLock()));
+                    case Message.What.ARCHIVE_SAVE -> Platform.runLater(() -> save());
+                    case Message.What.WINDOW_SLIDE -> Platform.runLater(() -> switchSlide(WindonlyConfig.getInstance().isSlide()));
                 }
             }
         });
     }
 
     /**
-     * 处理拖拽进入的数据
+     * 处理拖拽进入的数据，并保存数据
      *
      * @param o 数据对象
      */
@@ -329,6 +341,14 @@ public class WindonlyController implements Initializable, Serializable {
         if (!all.isEmpty() && all.stream().anyMatch(projectItem -> projectItem.sourceEquals(o))) {
             return;
         }
+        addItem(o, true);
+        save();
+    }
+
+    /**
+     * 向数据添加
+     */
+    private void addItem(Object o, boolean check) {
         ProjectItem projectItem;
         if (o instanceof List) {
             FileItem fileItem = new FileItem((List<File>) o);
@@ -351,7 +371,55 @@ public class WindonlyController implements Initializable, Serializable {
             textItem.init();
             projectItem = new ProjectItem(textItem);
         }
-        projectItemManager.add(0, projectItem);
+        projectItemManager.add(0, projectItem, check);
+    }
+
+    /**
+     * 从数据删除
+     *
+     * @param projectItem 删除的项目
+     */
+    private void removeItem(ProjectItem projectItem, boolean check) {
+        projectItemManager.remove(projectItem, check);
+    }
+
+    /**
+     * 置顶数据
+     *
+     * @param projectItem 目标置顶项目
+     */
+    private void topItem(ProjectItem projectItem, boolean check) {
+        projectItemManager.remove(projectItem, check);
+        projectItemManager.add(0, projectItem, check);
+    }
+
+    /**
+     * 检测操作是否可用
+     */
+    private boolean checkAccess() {
+        if (WindonlyConfig.getInstance().isLock()) {
+            showTip(MessageUtil.get("notModifyArchiveWhenLocked"));
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+
+    @FXML
+    protected void inputClicked() {
+    }
+
+    public void onMouseMoved() {
+        if (WindonlyConfig.getInstance().isSlide()) {
+            new Message(Message.What.WINDOW_SLIDE_OUT).send();
+        }
+    }
+
+    public void onMouseExited() {
+        if (WindonlyConfig.getInstance().isSlide()) {
+            new Message(Message.What.WINDOW_SLIDE_IN).send();
+        }
     }
 
     private final class InputOnDrag implements EventHandler<DragEvent> {
@@ -408,53 +476,40 @@ public class WindonlyController implements Initializable, Serializable {
             this.all = new ArrayList<>();
         }
 
-        public void add(ProjectItem projectItem) {
-            if (checkAccess()) {
+        public void add(ProjectItem projectItem, boolean check) {
+            if (!check || checkAccess()) {
                 list.getItems().add(projectItem);
                 this.all.add(projectItem);
-                WindonlyController.this.save();
             }
         }
 
-        public void add(int index, ProjectItem projectItem) {
-            if (checkAccess()) {
+        public void add(int index, ProjectItem projectItem, boolean check) {
+            if (!check || checkAccess()) {
                 list.getItems().add(index, projectItem);
                 this.all.add(index, projectItem);
-                WindonlyController.this.save();
             }
         }
 
-        public void remove(ProjectItem projectItem) {
-            if (checkAccess()) {
+        public void remove(ProjectItem projectItem, boolean check) {
+            if (!check || checkAccess()) {
                 list.getItems().remove(projectItem);
                 this.all.remove(projectItem);
-                WindonlyController.this.save();
             }
         }
 
         public void resetProjectItems() {
             list.getItems().clear();
             list.getItems().addAll(this.all);
-            WindonlyController.this.save();
         }
 
         public List<ProjectItem> getAll() {
             return all;
         }
 
-        public void clear() {
-            if (checkAccess()) {
+        public void clear(boolean check) {
+            if (!check || checkAccess()) {
                 list.getItems().clear();
                 this.all.clear();
-            }
-        }
-
-        private boolean checkAccess() {
-            if (WindonlyConfig.getInstance().isLock()) {
-                showTip(MessageUtil.get("notModifyArchiveWhenLocked"));
-                return false;
-            } else {
-                return true;
             }
         }
 
@@ -490,7 +545,7 @@ public class WindonlyController implements Initializable, Serializable {
 
         @Override
         public void load(String s) {
-            clear();
+            clear(false);
             if (s != null && !s.isEmpty()) {
                 ObjectMapper mapper = new ObjectMapper();
                 try {
@@ -500,21 +555,22 @@ public class WindonlyController implements Initializable, Serializable {
                     for (int i = list.size() - 1; i > -1; i--) {
                         ProjectItemData projectItem = list.get(i);
                         if (projectItem.type == ProjectItem.Type.FILE) {
-                            handleDragItem(new File(projectItem.getSource()));
+                            addItem(new File(projectItem.getSource()), false);
                         } else if (projectItem.type == ProjectItem.Type.FILES) {
                             String filePaths = projectItem.getSource();
                             List<File> files = new ArrayList<>();
                             for (String string : filePaths.split(",")) {
                                 files.add(new File(string));
                             }
-                            handleDragItem(files);
+                            addItem(files, false);
                         } else if (projectItem.type == ProjectItem.Type.IMAGE) {
-                            handleDragItem(new Image(projectItem.getSource()));
+                            addItem(new Image(projectItem.getSource()), false);
                         } else {
-                            handleDragItem(projectItem.source);
+                            addItem(projectItem.source, false);
                         }
                     }
-                } catch (JsonProcessingException ignored) {
+                } catch (JsonProcessingException e) {
+                    throw new WindonlyException(e);
                 }
             }
         }
