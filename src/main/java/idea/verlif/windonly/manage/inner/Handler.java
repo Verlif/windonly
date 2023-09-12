@@ -6,6 +6,11 @@ import java.io.Serializable;
 
 public abstract class Handler implements Serializable {
 
+    public Handler(String owner) {
+        tag = owner;
+        HandlerManager.getInstance().addHandler(this);
+    }
+
     public Handler() {
         StackTraceElement[] stack = Thread.currentThread().getStackTrace();
         String[] names = stack[3].getClassName().split("\\.");

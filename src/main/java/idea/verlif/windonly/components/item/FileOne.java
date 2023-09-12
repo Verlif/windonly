@@ -1,6 +1,7 @@
 package idea.verlif.windonly.components.item;
 
 import idea.verlif.windonly.config.WindonlyConfig;
+import idea.verlif.windonly.stage.ImagePreviewer;
 import idea.verlif.windonly.utils.SystemExecUtil;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -17,6 +18,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class FileOne extends BorderPane implements Item<File> {
+
+    private static final String[] PICTURE_SUFFIX = {"png", "jpg", "jpeg", "bmp", "gif"};
 
     private final File file;
     private final double height;
@@ -39,12 +42,34 @@ public class FileOne extends BorderPane implements Item<File> {
         setBottom(nameNode);
         setAlignment(nameNode, Pos.CENTER);
 
-        // 设置双击打开
-        setOnMouseClicked(mouseEvent -> {
-            if (mouseEvent.getClickCount() == 2) {
-                SystemExecUtil.openFileByExplorer(file.getAbsolutePath());
+        // 设置文件点击事件
+        if (isImage(file)) {
+            setOnMouseClicked(mouseEvent -> {
+                if (mouseEvent.getClickCount() > 1) {
+                    if (mouseEvent.isControlDown()) {
+                        SystemExecUtil.openFileByExplorer(file.getAbsolutePath());
+                    } else {
+                        new ImagePreviewer(file.getAbsolutePath()).show();
+                    }
+                }
+            });
+        } else {
+            setOnMouseClicked(mouseEvent -> {
+                if (mouseEvent.getClickCount() > 1) {
+                    SystemExecUtil.openFileByExplorer(file.getAbsolutePath());
+                }
+            });
+        }
+    }
+
+    private boolean isImage(File file) {
+        String filename = file.getName().toLowerCase();
+        for (String suffix : PICTURE_SUFFIX) {
+            if (filename.endsWith(suffix)) {
+                return true;
             }
-        });
+        }
+        return false;
     }
 
     private Node createFilenameNode(File file) {
@@ -80,8 +105,6 @@ public class FileOne extends BorderPane implements Item<File> {
      */
     private static final class FileIconImageView extends ImageView {
 
-        private static final String[] PICTURE_SUFFIX = {"png", "jpg", "jpeg", "bmp", "gif"};
-
         public FileIconImageView(File file) {
             super();
             Image image = null;
@@ -89,6 +112,7 @@ public class FileOne extends BorderPane implements Item<File> {
             for (String suffix : PICTURE_SUFFIX) {
                 if (filename.endsWith(suffix)) {
                     image = new Image(file.getAbsolutePath());
+                    break;
                 }
             }
             // 默认图片
