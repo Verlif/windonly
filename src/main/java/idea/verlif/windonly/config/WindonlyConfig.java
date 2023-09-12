@@ -12,7 +12,7 @@ public class WindonlyConfig implements Savable<String> {
 
     private static final WindonlyConfig WINDONLY_CONFIG = new WindonlyConfig();
 
-    private WindonlyConfig() {
+    WindonlyConfig() {
     }
 
     public static WindonlyConfig getInstance() {

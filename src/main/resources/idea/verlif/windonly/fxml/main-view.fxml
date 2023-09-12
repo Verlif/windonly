@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.ChoiceBox?>
-<?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.TextField?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
 <BorderPane prefHeight="520.0" prefWidth="400.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="idea.verlif.windonly.WindonlyController" onMouseMoved="#onMouseMoved" onMouseExited="#onMouseExited">
+            fx:controller="idea.verlif.windonly.WindonlyController" onMouseEntered="#onMouseEntered"
+            onMouseExited="#onMouseExited">
     <bottom>
         <BorderPane>
             <left>
@@ -59,14 +57,28 @@
         </BorderPane>
     </bottom>
     <center>
-        <BorderPane fx:id="center" onMouseMoved="#onMouseMoved">
-            <center>
-                <ScrollPane fitToHeight="true" fitToWidth="true" prefHeight="400.0" prefWidth="400.0"
-                            BorderPane.alignment="CENTER">
+        <SplitPane orientation="VERTICAL" dividerPositions="0.0">
+            <BorderPane>
+                <top>
+                    <BorderPane>
+                        <center>
+                            <Label fx:id="ipView" />
+                        </center>
+                        <padding>
+                            <Insets bottom="4.0" left="4.0" right="4.0" top="4.0"/>
+                        </padding>
+                    </BorderPane>
+                </top>
+                <center>
+                    <ListView fx:id="remoteList"/>
+                </center>
+            </BorderPane>
+            <BorderPane fx:id="center">
+                <center>
                     <ListView fx:id="list" prefHeight="145.0" prefWidth="179.0"/>
-                </ScrollPane>
-            </center>
-        </BorderPane>
+                </center>
+            </BorderPane>
+        </SplitPane>
     </center>
     <padding>
         <Insets bottom="4.0" left="4.0" right="4.0"/>

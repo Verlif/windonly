@@ -4,12 +4,14 @@ import idea.verlif.windonly.config.WindonlyConfig;
 import idea.verlif.windonly.manage.inner.Handler;
 import idea.verlif.windonly.manage.inner.Message;
 import idea.verlif.windonly.utils.ScreenUtil;
+import javafx.animation.TranslateTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,36 +38,47 @@ public class WindonlyApplication extends Application {
         stage.setOnHidden(windowEvent -> new Message(Message.What.ARCHIVE_SAVE).send());
         // 注册消息处理
         register();
-
     }
 
     private static void register() {
         new Handler() {
             @Override
             public void handlerMessage(Message message) {
-                if (message.what == Message.What.WINDOW_PIN) {
-                    Platform.runLater(() -> {
+                switch (message.what) {
+                    case Message.What.WINDOW_PIN -> Platform.runLater(() -> {
                         mainStage.setAlwaysOnTop(WindonlyConfig.getInstance().isAlwaysShow());
                     });
-                } else if (message.what == Message.What.WINDOW_SLIDE) {
-                    if (WindonlyConfig.getInstance().isSlide()) {
-                        double screenWidth = ScreenUtil.getScreenSize()[0];
-                        double thisWidth = mainStage.getWidth();
-                        // 右侧则贴近右边框
-                        left = !(mainStage.getX() + thisWidth / 2 > screenWidth / 2);
-                        new Message(Message.What.WINDOW_SLIDE_OUT).send();
+                    case Message.What.WINDOW_SLIDE -> {
+                        if (WindonlyConfig.getInstance().isSlide()) {
+                            double screenWidth = ScreenUtil.getScreenSize()[0];
+                            double thisWidth = mainStage.getWidth();
+                            // 右侧则贴近右边框
+                            left = !(mainStage.getX() + thisWidth / 2 > screenWidth / 2);
+                            new Message(Message.What.WINDOW_SLIDE_OUT).send();
+                        }
                     }
-                } else if (message.what == Message.What.WINDOW_SLIDE_OUT) {
-                    if (left) {
-                        slideLeft();
-                    } else {
-                        slideRight();
+                    case Message.What.WINDOW_SLIDE_OUT -> {
+                        if (left) {
+                            slideLeft();
+                        } else {
+                            slideRight();
+                        }
                     }
-                } else if (message.what == Message.What.WINDOW_SLIDE_IN) {
-                    if (left) {
-                        hideLeft();
-                    } else {
-                        hideRight();
+                    case Message.What.WINDOW_SLIDE_IN -> {
+                        if (left) {
+                            hideLeft();
+                        } else {
+                            hideRight();
+                        }
+                    }
+                    case Message.What.WINDOW_MIN -> {
+                        Platform.runLater(() -> mainStage.setMaximized(false));
+                    }
+                    case Message.What.WINDOW_MAX -> {
+                        Platform.runLater(() -> mainStage.setMaximized(true));
+                    }
+                    case Message.What.WINDOW_CLOSE -> {
+                        Platform.runLater(() -> mainStage.close());
                     }
                 }
             }

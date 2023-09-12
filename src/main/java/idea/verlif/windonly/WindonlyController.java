@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import idea.verlif.windonly.components.ProjectItem;
+import idea.verlif.windonly.components.RemoteProjectItem;
 import idea.verlif.windonly.components.alert.ConfirmAlert;
 import idea.verlif.windonly.components.alert.InputAlert;
 import idea.verlif.windonly.components.item.FileItem;
@@ -16,8 +17,8 @@ import idea.verlif.windonly.manage.HandlerManager;
 import idea.verlif.windonly.manage.inner.Handler;
 import idea.verlif.windonly.manage.inner.Message;
 import idea.verlif.windonly.utils.ClipboardUtil;
+import idea.verlif.windonly.utils.IpUtil;
 import idea.verlif.windonly.utils.MessageUtil;
-import idea.verlif.windonly.utils.ScreenUtil;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -29,7 +30,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.text.Font;
 
@@ -39,19 +39,21 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
 
 public class WindonlyController implements Initializable, Serializable {
 
     public TextField input;
+    public ListView<RemoteProjectItem> remoteList;
     public ListView<ProjectItem> list;
     public ImageView lockView;
     public ImageView pinView;
     public ImageView slideView;
     public BorderPane center;
     public ChoiceBox<String> archiveBox;
+
+    public Label ipView;
 
     private final ProjectItemManager projectItemManager;
     private Archive nowArchive;
@@ -136,6 +138,8 @@ public class WindonlyController implements Initializable, Serializable {
         switchPin(WindonlyConfig.getInstance().isAlwaysShow());
         switchSlide(WindonlyConfig.getInstance().isSlide());
 
+        // 初始化远程列表
+        initRemoteList();
         // 设置样式
         input.setPrefHeight(WindonlyConfig.getInstance().getFontSize() + 8);
         input.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
@@ -156,6 +160,27 @@ public class WindonlyController implements Initializable, Serializable {
 
     private void selectArchive(String archive) {
         archiveBox.setValue(archive);
+    }
+
+    /**
+     * 初始化远程列表
+     */
+    private void initRemoteList() {
+        // 设置list
+        remoteList.setFocusTraversable(false);
+        // 设置数据展示区拖入事件
+        remoteList.setOnDragEntered(new ListOnDrag());
+        remoteList.setOnDragEntered(new RemoteListOnDrag());
+
+        ipView.setFont(input.getFont());
+        ipView.setText(IpUtil.getLocalIp());
+
+        // 注册远程信息处理
+        registerRemoteHandler();
+    }
+
+    private void initRemoteSocket() {
+
     }
 
     private ContextMenu createArchiveMenu() {
@@ -294,7 +319,7 @@ public class WindonlyController implements Initializable, Serializable {
      * 注册需要处理的信息
      */
     private void registerHandler() {
-        HandlerManager.getInstance().addHandler(new Handler() {
+        new Handler() {
             @Override
             public void handlerMessage(Message message) {
                 switch (message.what) {
@@ -316,39 +341,46 @@ public class WindonlyController implements Initializable, Serializable {
                             save();
                         });
                     }
-                    case Message.What.QUICK_PASTE -> {
-                        Platform.runLater(() -> {
-                            handleDragItem(message.getObj());
-                        });
-                    }
-                    case Message.What.WINDOW_PIN -> Platform.runLater(() -> switchPin(WindonlyConfig.getInstance().isAlwaysShow()));
-                    case Message.What.ARCHIVE_LOCK -> Platform.runLater(() -> switchLock(WindonlyConfig.getInstance().isLock()));
+                    case Message.What.WINDOW_PIN ->
+                            Platform.runLater(() -> switchPin(WindonlyConfig.getInstance().isAlwaysShow()));
+                    case Message.What.ARCHIVE_LOCK ->
+                            Platform.runLater(() -> switchLock(WindonlyConfig.getInstance().isLock()));
                     case Message.What.ARCHIVE_SAVE -> Platform.runLater(() -> save());
-                    case Message.What.WINDOW_SLIDE -> Platform.runLater(() -> switchSlide(WindonlyConfig.getInstance().isSlide()));
+                    case Message.What.WINDOW_SLIDE ->
+                            Platform.runLater(() -> switchSlide(WindonlyConfig.getInstance().isSlide()));
                 }
             }
-        });
+        };
     }
 
-    /**
-     * 处理拖拽进入的数据，并保存数据
-     *
-     * @param o 数据对象
-     */
-    private void handleDragItem(Object o) {
-        // 去除重复添加
-        List<ProjectItem> all = projectItemManager.getAll();
-        if (!all.isEmpty() && all.stream().anyMatch(projectItem -> projectItem.sourceEquals(o))) {
-            return;
-        }
-        addItem(o, true);
-        save();
+    private void registerRemoteHandler() {
+        new Handler("remote") {
+            @Override
+            public void handlerMessage(Message message) {
+                switch (message.what) {
+                    case Message.What.COPY_REMOTE -> {
+                        RemoteProjectItem focusedItem = remoteList.getFocusModel().getFocusedItem();
+                        ClipboardUtil.copyToSystemClipboard(focusedItem.getSource());
+                    }
+                    case Message.What.DELETE_REMOTE -> {
+                        RemoteProjectItem focusedItem = remoteList.getFocusModel().getFocusedItem();
+                        Platform.runLater(() -> {
+                            remoteList.getItems().remove(focusedItem);
+                        });
+                    }
+                    case Message.What.SET_TO_TOP_REMOTE -> {
+                        RemoteProjectItem focusedItem = remoteList.getFocusModel().getFocusedItem();
+                        Platform.runLater(() -> {
+                            remoteList.getItems().remove(focusedItem);
+                            remoteList.getItems().add(0, focusedItem);
+                        });
+                    }
+                }
+            }
+        };
     }
 
-    /**
-     * 向数据添加
-     */
-    private void addItem(Object o, boolean check) {
+    private ProjectItem selectProjectItem(Object o) {
         ProjectItem projectItem;
         if (o instanceof List) {
             FileItem fileItem = new FileItem((List<File>) o);
@@ -364,14 +396,14 @@ public class WindonlyController implements Initializable, Serializable {
                 imageOne.init();
                 projectItem = new ProjectItem(imageOne);
             } else {
-                return;
+                return null;
             }
         } else {
             TextItem textItem = new TextItem(o.toString());
             textItem.init();
             projectItem = new ProjectItem(textItem);
         }
-        projectItemManager.add(0, projectItem, check);
+        return projectItem;
     }
 
     /**
@@ -405,12 +437,36 @@ public class WindonlyController implements Initializable, Serializable {
         }
     }
 
+    /**
+     * 处理拖拽进入的数据，并保存数据
+     *
+     * @param o 数据对象
+     */
+    private void handleDragItem(Object o) {
+        // 去除重复添加
+        List<ProjectItem> all = projectItemManager.getAll();
+        if (!all.isEmpty() && all.stream().anyMatch(projectItem -> projectItem.sourceEquals(o))) {
+            return;
+        }
+        addItem(o, true);
+        save();
+    }
+
+    /**
+     * 向数据添加
+     */
+    private void addItem(Object o, boolean check) {
+        ProjectItem projectItem = selectProjectItem(o);
+        if (projectItem != null) {
+            projectItemManager.add(0, projectItem, check);
+        }
+    }
 
     @FXML
     protected void inputClicked() {
     }
 
-    public void onMouseMoved() {
+    public void onMouseEntered() {
         if (WindonlyConfig.getInstance().isSlide()) {
             new Message(Message.What.WINDOW_SLIDE_OUT).send();
         }
@@ -463,6 +519,75 @@ public class WindonlyController implements Initializable, Serializable {
                 handleDragItem(dragboard.getUrl());
             }
         }
+    }
+
+    private final class RemoteListOnDrag implements EventHandler<DragEvent> {
+
+        @Override
+        public void handle(DragEvent dragEvent) {
+            Dragboard dragboard = dragEvent.getDragboard();
+            if (dragboard.hasFiles()) {
+                handleDragItem(dragboard.getFiles());
+            } else if (dragboard.hasImage()) {
+                Image image = dragboard.getImage();
+                handleDragItem(image);
+            } else if (dragboard.hasString()) {
+                handleDragItem(dragboard.getString());
+            } else if (dragboard.hasUrl()) {
+                handleDragItem(dragboard.getUrl());
+            }
+        }
+
+        /**
+         * 处理拖拽进入的数据，并保存数据
+         *
+         * @param o 数据对象
+         */
+        private void handleDragItem(Object o) {
+            // 去除重复添加
+            List<RemoteProjectItem> all = remoteList.getItems();
+            if (!all.isEmpty() && all.stream().anyMatch(projectItem -> projectItem.sourceEquals(o))) {
+                return;
+            }
+            addItem(o);
+        }
+
+        /**
+         * 向数据添加
+         */
+        private void addItem(Object o) {
+            RemoteProjectItem projectItem = selectProjectItem(o);
+            if (projectItem != null) {
+                remoteList.getItems().add(projectItem);
+            }
+        }
+
+        private RemoteProjectItem selectProjectItem(Object o) {
+            RemoteProjectItem projectItem;
+            if (o instanceof List) {
+                FileItem fileItem = new FileItem((List<File>) o);
+                fileItem.init();
+                projectItem = new RemoteProjectItem(fileItem, IpUtil.getLocalIp());
+            } else if (o instanceof File) {
+                FileItem fileItem = new FileItem((File) o);
+                fileItem.init();
+                projectItem = new RemoteProjectItem(fileItem, IpUtil.getLocalIp());
+            } else if (o instanceof Image) {
+                if (((Image) o).getUrl() != null) {
+                    ImageOne imageOne = new ImageOne((Image) o);
+                    imageOne.init();
+                    projectItem = new RemoteProjectItem(imageOne, IpUtil.getLocalIp());
+                } else {
+                    return null;
+                }
+            } else {
+                TextItem textItem = new TextItem(o.toString());
+                textItem.init();
+                projectItem = new RemoteProjectItem(textItem, IpUtil.getLocalIp());
+            }
+            return projectItem;
+        }
+
     }
 
     /**
@@ -554,19 +679,19 @@ public class WindonlyController implements Initializable, Serializable {
                     // 反向装载
                     for (int i = list.size() - 1; i > -1; i--) {
                         ProjectItemData projectItem = list.get(i);
-                        if (projectItem.type == ProjectItem.Type.FILE) {
+                        if (projectItem.getType() == ProjectItem.Type.FILE) {
                             addItem(new File(projectItem.getSource()), false);
-                        } else if (projectItem.type == ProjectItem.Type.FILES) {
+                        } else if (projectItem.getType() == ProjectItem.Type.FILES) {
                             String filePaths = projectItem.getSource();
                             List<File> files = new ArrayList<>();
                             for (String string : filePaths.split(",")) {
                                 files.add(new File(string));
                             }
                             addItem(files, false);
-                        } else if (projectItem.type == ProjectItem.Type.IMAGE) {
+                        } else if (projectItem.getType() == ProjectItem.Type.IMAGE) {
                             addItem(new Image(projectItem.getSource()), false);
                         } else {
-                            addItem(projectItem.source, false);
+                            addItem(projectItem.getSource(), false);
                         }
                     }
                 } catch (JsonProcessingException e) {
@@ -605,17 +730,4 @@ public class WindonlyController implements Initializable, Serializable {
         }
     }
 
-    private static final class CtrlListener {
-
-        private boolean ctrlDown;
-
-        public boolean isCtrlDown() {
-            return ctrlDown;
-        }
-
-        public void setCtrlDown(boolean ctrlDown) {
-            this.ctrlDown = ctrlDown;
-        }
-
-    }
 }

@@ -5,6 +5,7 @@ module idea.verlif.windonly {
     requires org.controlsfx.controls;
     requires easy.language;
     requires easy.file;
+    requires socket.point;
     requires com.fasterxml.jackson.databind;
     requires jintellitype;
 
@@ -14,4 +15,5 @@ module idea.verlif.windonly {
     exports idea.verlif.windonly.components.item;
     exports idea.verlif.windonly.config;
     exports idea.verlif.windonly.data;
+    exports idea.verlif.windonly.remote;
 }

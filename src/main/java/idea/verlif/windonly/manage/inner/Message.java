@@ -7,19 +7,68 @@ import java.io.Serializable;
 public class Message implements Serializable {
 
     public interface What {
+        /**
+         * 保存存档
+         */
         int ARCHIVE_SAVE = 0;
-        int CONFIG_SAVE = 1;
 
+        /**
+         * 复制数据列表聚焦项
+         */
         int COPY = 1000;
+        /**
+         * 复制远程数据列表聚焦项
+         */
+        int COPY_REMOTE = 1010;
+        /**
+         * 置顶数据列表聚焦项
+         */
         int SET_TO_TOP = 1001;
+        /**
+         * 置顶远程数据列表聚焦项
+         */
+        int SET_TO_TOP_REMOTE = 1011;
+        /**
+         * 删除数据列表聚焦项
+         */
         int DELETE = 1002;
-        int QUICK_PASTE = 1003;
+        /**
+         * 删除远程数据列表聚焦项
+         */
+        int DELETE_REMOTE = 1012;
 
+        /**
+         * 置顶应用窗口
+         */
         int WINDOW_PIN = 2001;
+        /**
+         * 窗口侧边滑出
+         */
         int WINDOW_SLIDE_OUT = 2002;
+        /**
+         * 窗口侧边隐藏
+         */
         int WINDOW_SLIDE_IN = 2003;
+        /**
+         * 窗口开启或关闭侧边隐藏
+         */
         int WINDOW_SLIDE = 2004;
+        /**
+         * 窗口最小化
+         */
+        int WINDOW_MIN = 2005;
+        /**
+         * 窗口最大化
+         */
+        int WINDOW_MAX = 2006;
+        /**
+         * 关闭窗口
+         */
+        int WINDOW_CLOSE = 2007;
 
+        /**
+         * 锁定当前工作区
+         */
         int ARCHIVE_LOCK = 3002;
     }
 
