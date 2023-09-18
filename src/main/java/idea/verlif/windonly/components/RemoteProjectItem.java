@@ -69,6 +69,10 @@ public class RemoteProjectItem extends HBox implements Item<Object> {
         }
     }
 
+    public String getKey() {
+        return key;
+    }
+
     @Override
     public Object getSource() {
         return item.getSource();

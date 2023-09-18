@@ -10,12 +10,15 @@ import idea.verlif.windonly.components.alert.InputAlert;
 import idea.verlif.windonly.components.item.FileItem;
 import idea.verlif.windonly.components.item.ImageOne;
 import idea.verlif.windonly.components.item.TextItem;
+import idea.verlif.windonly.config.RemoteConfig;
 import idea.verlif.windonly.config.WindonlyConfig;
 import idea.verlif.windonly.data.Archive;
 import idea.verlif.windonly.data.Savable;
-import idea.verlif.windonly.manage.HandlerManager;
 import idea.verlif.windonly.manage.inner.Handler;
 import idea.verlif.windonly.manage.inner.Message;
+import idea.verlif.windonly.remote.RemoteDataManager;
+import idea.verlif.windonly.remote.RemoteItemData;
+import idea.verlif.windonly.remote.RemoteListDisplay;
 import idea.verlif.windonly.utils.ClipboardUtil;
 import idea.verlif.windonly.utils.IpUtil;
 import idea.verlif.windonly.utils.MessageUtil;
@@ -55,10 +58,12 @@ public class WindonlyController implements Initializable, Serializable {
 
     public Label ipView;
 
+    private final RemoteDataManager remoteDataManager;
     private final ProjectItemManager projectItemManager;
     private Archive nowArchive;
 
     public WindonlyController() {
+        remoteDataManager = RemoteDataManager.getInstance();
         projectItemManager = new ProjectItemManager();
     }
 
@@ -171,12 +176,39 @@ public class WindonlyController implements Initializable, Serializable {
         // 设置数据展示区拖入事件
         remoteList.setOnDragEntered(new ListOnDrag());
         remoteList.setOnDragEntered(new RemoteListOnDrag());
+        remoteDataManager.init(remoteList);
 
         ipView.setFont(input.getFont());
         ipView.setText(IpUtil.getLocalIp());
+        ipView.setContextMenu(remoteContextMenu());
+    }
 
-        // 注册远程信息处理
-        registerRemoteHandler();
+    private ContextMenu remoteContextMenu() {
+        // 启用远程
+        MenuItem enabled = new MenuItem(MessageUtil.get("enabled"));
+        enabled.setDisable(!RemoteConfig.getInstance().isEnabled());
+        // 关闭远程
+        MenuItem disabled = new MenuItem(MessageUtil.get("disabled"));
+        disabled.setDisable(RemoteConfig.getInstance().isEnabled());
+        enabled.setOnAction(actionEvent -> {
+            RemoteConfig.getInstance().setEnabled(true);
+            enabled.setDisable(true);
+            disabled.setDisable(false);
+        });
+        disabled.setOnAction(actionEvent -> {
+            RemoteConfig.getInstance().setEnabled(false);
+            enabled.setDisable(false);
+            disabled.setDisable(true);
+        });
+
+        // 远程列表
+        MenuItem remoteList = new MenuItem(MessageUtil.get("remoteList"));
+        remoteList.setDisable(RemoteConfig.getInstance().isEnabled());
+        remoteList.setOnAction(actionEvent -> {
+            new RemoteListDisplay().show();
+        });
+
+        return new ContextMenu(enabled, disabled, remoteList);
     }
 
     private void initRemoteSocket() {
@@ -296,10 +328,15 @@ public class WindonlyController implements Initializable, Serializable {
      * @param archive 工作区名称
      */
     private void load(String archive) {
+        boolean slide = WindonlyConfig.getInstance().isSlide();
         nowArchive = new Archive(archive);
         nowArchive.load(WindonlyConfig.getInstance());
         nowArchive.load(projectItemManager);
         Archive.setCurrentArchive(archive);
+        // 当从隐藏的工作区切换到不隐藏的工作区时，主动展开
+        if (slide && !WindonlyConfig.getInstance().isSlide()) {
+            new Message(Message.What.WINDOW_SLIDE_OUT).send();
+        }
     }
 
     /**
@@ -348,33 +385,6 @@ public class WindonlyController implements Initializable, Serializable {
                     case Message.What.ARCHIVE_SAVE -> Platform.runLater(() -> save());
                     case Message.What.WINDOW_SLIDE ->
                             Platform.runLater(() -> switchSlide(WindonlyConfig.getInstance().isSlide()));
-                }
-            }
-        };
-    }
-
-    private void registerRemoteHandler() {
-        new Handler("remote") {
-            @Override
-            public void handlerMessage(Message message) {
-                switch (message.what) {
-                    case Message.What.COPY_REMOTE -> {
-                        RemoteProjectItem focusedItem = remoteList.getFocusModel().getFocusedItem();
-                        ClipboardUtil.copyToSystemClipboard(focusedItem.getSource());
-                    }
-                    case Message.What.DELETE_REMOTE -> {
-                        RemoteProjectItem focusedItem = remoteList.getFocusModel().getFocusedItem();
-                        Platform.runLater(() -> {
-                            remoteList.getItems().remove(focusedItem);
-                        });
-                    }
-                    case Message.What.SET_TO_TOP_REMOTE -> {
-                        RemoteProjectItem focusedItem = remoteList.getFocusModel().getFocusedItem();
-                        Platform.runLater(() -> {
-                            remoteList.getItems().remove(focusedItem);
-                            remoteList.getItems().add(0, focusedItem);
-                        });
-                    }
                 }
             }
         };
@@ -521,7 +531,7 @@ public class WindonlyController implements Initializable, Serializable {
         }
     }
 
-    private final class RemoteListOnDrag implements EventHandler<DragEvent> {
+    private final static class RemoteListOnDrag implements EventHandler<DragEvent> {
 
         @Override
         public void handle(DragEvent dragEvent) {
@@ -544,50 +554,31 @@ public class WindonlyController implements Initializable, Serializable {
          * @param o 数据对象
          */
         private void handleDragItem(Object o) {
-            // 去除重复添加
-            List<RemoteProjectItem> all = remoteList.getItems();
-            if (!all.isEmpty() && all.stream().anyMatch(projectItem -> projectItem.sourceEquals(o))) {
-                return;
-            }
-            addItem(o);
-        }
-
-        /**
-         * 向数据添加
-         */
-        private void addItem(Object o) {
-            RemoteProjectItem projectItem = selectProjectItem(o);
-            if (projectItem != null) {
-                remoteList.getItems().add(projectItem);
-            }
-        }
-
-        private RemoteProjectItem selectProjectItem(Object o) {
-            RemoteProjectItem projectItem;
+            RemoteItemData remoteItemData = new RemoteItemData();
+            RemoteProjectItem.Type type;
+            String data;
             if (o instanceof List) {
-                FileItem fileItem = new FileItem((List<File>) o);
-                fileItem.init();
-                projectItem = new RemoteProjectItem(fileItem, IpUtil.getLocalIp());
-            } else if (o instanceof File) {
-                FileItem fileItem = new FileItem((File) o);
-                fileItem.init();
-                projectItem = new RemoteProjectItem(fileItem, IpUtil.getLocalIp());
-            } else if (o instanceof Image) {
-                if (((Image) o).getUrl() != null) {
-                    ImageOne imageOne = new ImageOne((Image) o);
-                    imageOne.init();
-                    projectItem = new RemoteProjectItem(imageOne, IpUtil.getLocalIp());
-                } else {
-                    return null;
+                type = RemoteProjectItem.Type.FILES;
+                List<File> source = (List<File>) o;
+                StringBuilder s = new StringBuilder();
+                for (File file : source) {
+                    s.append(file.getAbsoluteFile()).append(",");
                 }
+                data = s.substring(0, s.length() - 1);
+            } else if (o instanceof File) {
+                type = RemoteProjectItem.Type.FILE;
+                data = ((File) o).getAbsolutePath();
+            } else if (o instanceof Image) {
+                type = RemoteProjectItem.Type.IMAGE;
+                data = ((Image) o).getUrl();
             } else {
-                TextItem textItem = new TextItem(o.toString());
-                textItem.init();
-                projectItem = new RemoteProjectItem(textItem, IpUtil.getLocalIp());
+                type = RemoteProjectItem.Type.TEXT;
+                data = o.toString();
             }
-            return projectItem;
+            remoteItemData.setType(type);
+            remoteItemData.setData(data);
+            new Message(Message.What.INSERT_REMOTE).send(remoteItemData);
         }
-
     }
 
     /**

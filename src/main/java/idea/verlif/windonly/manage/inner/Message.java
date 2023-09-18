@@ -25,10 +25,6 @@ public class Message implements Serializable {
          */
         int SET_TO_TOP = 1001;
         /**
-         * 置顶远程数据列表聚焦项
-         */
-        int SET_TO_TOP_REMOTE = 1011;
-        /**
          * 删除数据列表聚焦项
          */
         int DELETE = 1002;
@@ -36,6 +32,14 @@ public class Message implements Serializable {
          * 删除远程数据列表聚焦项
          */
         int DELETE_REMOTE = 1012;
+        /**
+         * 新增远程数据
+         */
+        int INSERT_REMOTE = 1013;
+        /**
+         * 同步远程数据
+         */
+        int SYNC_REMOTE = 1015;
 
         /**
          * 置顶应用窗口

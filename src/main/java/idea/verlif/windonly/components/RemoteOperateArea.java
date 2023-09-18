@@ -27,15 +27,10 @@ public class RemoteOperateArea extends VBox {
         copyLabel.setOnMouseClicked(mouseEvent -> new Message(Message.What.COPY_REMOTE).send(mouseEvent));
         copyLabel.setStyle(BUTTON_STYLE);
         copyLabel.setPadding(new ButtonInsets());
-        // 置顶
-        Label setToTop = new Label(MessageUtil.get("setToTop"));
-        setToTop.setOnMouseClicked(mouseEvent -> new Message(Message.What.SET_TO_TOP_REMOTE).send(mouseEvent));
-        setToTop.setStyle(BUTTON_STYLE);
-        setToTop.setPadding(new ButtonInsets());
         // 删除
         Label delete = new DeleteButton();
 
-        getChildren().addAll(copyLabel, setToTop, delete);
+        getChildren().addAll(copyLabel, delete);
     }
 
     private static final class DeleteButton extends Label {
