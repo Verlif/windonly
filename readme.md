@@ -14,3 +14,7 @@
 ![主要页面](docs/images/mainWindow.png)
 
 ![图片预览器](docs/images/imagePreviewer.png)
+
+## 启动
+
+JDK 17，通过直接运行WindonlyApplication直接启动，或自行打包。
