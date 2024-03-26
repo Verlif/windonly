@@ -1,7 +1,7 @@
 package idea.verlif.windonly.components.item;
 
-import idea.verlif.windonly.components.alert.TextAlert;
 import idea.verlif.windonly.config.WindonlyConfig;
+import idea.verlif.windonly.stage.TextPreviewer;
 import javafx.scene.control.Label;
 import javafx.scene.text.Font;
 
@@ -24,7 +24,7 @@ public class TextItem extends Label implements Item<String> {
 
         setOnMouseClicked(mouseEvent -> {
             if (mouseEvent.getClickCount() > 1) {
-                new TextAlert(text).show();
+                new TextPreviewer(text).show();
             }
         });
     }

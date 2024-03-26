@@ -2,16 +2,13 @@ package idea.verlif.windonly.components.alert;
 
 import idea.verlif.windonly.WindonlyApplication;
 import idea.verlif.windonly.config.WindonlyConfig;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
 import javafx.stage.Modality;
 
@@ -40,7 +37,7 @@ public abstract class InputAlert {
         inputField.setPrefHeight(WindonlyConfig.getInstance().getFontSize() + 8);
         inputField.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
         inputField.setOnKeyPressed(keyEvent -> {
-            if (keyEvent.getCode() == KeyCode.ENTER) {
+            if (keyEvent.getCode() == KeyCode.ENTER && !inputField.getText().isBlank()) {
                 input(inputField.getText());
             }
         });

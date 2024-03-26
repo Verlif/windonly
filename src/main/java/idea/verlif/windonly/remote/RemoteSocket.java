@@ -83,18 +83,20 @@ public class RemoteSocket extends SocketPoint {
             @Override
             public void handlerMessage(Message message) {
                 switch (message.what) {
-                    case Message.What.DELETE_REMOTE -> {
+                    case Message.What.DELETE_REMOTE: {
                         RemoteItemData remoteItemData = (RemoteItemData) message.getObj();
                         RemoteData remoteData = new RemoteData(getKey(), RemoteData.Type.DELETE);
                         remoteData.setData(remoteItemData.toString());
                         send(remoteData.toString());
                     }
-                    case Message.What.INSERT_REMOTE -> {
+                    break;
+                    case Message.What.INSERT_REMOTE: {
                         RemoteItemData remoteItemData = (RemoteItemData) message.getObj();
                         RemoteData remoteData = new RemoteData(getKey(), RemoteData.Type.INSERT);
                         remoteData.setData(remoteItemData.toString());
                         send(remoteData.toString());
                     }
+                    break;
                 }
             }
         };
@@ -122,14 +124,16 @@ public class RemoteSocket extends SocketPoint {
             RemoteData data = RemoteData.parse(s);
             if (data != null) {
                 switch (data.getType()) {
-                    case CONNECT -> {
+                    case CONNECT: {
                         RemoteData returnData = new RemoteData(getKey(), RemoteData.Type.CONNECTED);
                         endPoint.send(returnData.toString());
                     }
-                    case CONNECTED -> {
+                    break;
+                    case CONNECTED: {
                         add(endPoint, data.getKey());
                     }
-                    case SYNC -> {
+                    break;
+                    case SYNC: {
                         if (check(endPoint)) {
                             RemoteItemData itemData = RemoteItemData.parse(data.getData());
                             if (itemData != null) {
@@ -137,7 +141,8 @@ public class RemoteSocket extends SocketPoint {
                             }
                         }
                     }
-                    case INSERT -> {
+                    break;
+                    case INSERT: {
                         if (check(endPoint)) {
                             RemoteItemData itemData = RemoteItemData.parse(data.getData());
                             if (itemData != null) {
@@ -145,7 +150,8 @@ public class RemoteSocket extends SocketPoint {
                             }
                         }
                     }
-                    case DELETE -> {
+                    break;
+                    case DELETE: {
                         if (check(endPoint)) {
                             RemoteItemData itemData = RemoteItemData.parse(data.getData());
                             if (itemData != null) {
@@ -153,7 +159,9 @@ public class RemoteSocket extends SocketPoint {
                             }
                         }
                     }
-                    case DOWNLOAD -> {
+                    break;
+                    case DOWNLOAD:
+                    case UPLOAD: {
                         if (check(endPoint)) {
                             RemoteItemData itemData = RemoteItemData.parse(data.getData());
                             if (itemData != null) {
@@ -161,14 +169,8 @@ public class RemoteSocket extends SocketPoint {
                             }
                         }
                     }
-                    case UPLOAD -> {
-                        if (check(endPoint)) {
-                            RemoteItemData itemData = RemoteItemData.parse(data.getData());
-                            if (itemData != null) {
-                            }
-                        }
-                    }
-                    default -> {
+                    break;
+                    default: {
                         error(endPoint);
                     }
                 }

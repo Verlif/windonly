@@ -52,7 +52,7 @@
                 </HBox>
             </right>
             <BorderPane.margin>
-                <Insets top="4.0"/>
+                <Insets top="4.0" left="4.0" right="4.0"/>
             </BorderPane.margin>
         </BorderPane>
     </bottom>
@@ -81,6 +81,6 @@
         </SplitPane>
     </center>
     <padding>
-        <Insets bottom="4.0" left="4.0" right="4.0"/>
+        <Insets bottom="4.0"/>
     </padding>
 </BorderPane>

@@ -11,6 +11,7 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 
 public class ProjectItem extends HBox implements Item<Object> {
@@ -45,7 +46,7 @@ public class ProjectItem extends HBox implements Item<Object> {
             if (type == Type.FILES) {
                 content.putFiles((List<File>) item.getSource());
             } else if (type == Type.FILE) {
-                content.putFiles(List.of((File) item.getSource()));
+                content.putFiles(Collections.singletonList((File) item.getSource()));
             } else if (type == Type.IMAGE) {
                 content.putImage((Image) item.getSource());
             } else {
