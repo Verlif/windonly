@@ -3,9 +3,9 @@ module idea.verlif.windonly {
     requires javafx.fxml;
 
     requires org.controlsfx.controls;
-    requires easy.language;
-    requires easy.file;
-    requires socket.point;
+    requires idea.verlif.easy.dict;
+    requires idea.verlif.easy.file;
+    requires idea.verlif.socketpoint;
     requires com.fasterxml.jackson.databind;
 
     opens idea.verlif.windonly to javafx.fxml;

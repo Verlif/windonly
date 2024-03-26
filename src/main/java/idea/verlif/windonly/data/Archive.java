@@ -49,7 +49,6 @@ public class Archive implements Serializable {
     }
 
     public void save(Savable<String> savable) {
-        System.out.println("save - " + name + " - " + savable.getClass().getSimpleName());
         String archivePath = getArchivePath(name);
         File archiveDir = new File(archivePath);
         if (!archiveDir.exists() && !archiveDir.mkdirs()) {
@@ -64,7 +63,6 @@ public class Archive implements Serializable {
     }
 
     public void load(Savable<String> savable) {
-        System.out.println("load - " + name + " - " + savable.getClass().getSimpleName());
         String setting = getArchivePath(name);
         File file = new File(setting, getSavableFilename(savable));
         if (file.exists()) {
