@@ -1,36 +1,36 @@
 package idea.verlif.windonly.utils;
 
-import idea.verlif.easy.language.MessageGetter;
 
-import java.io.IOException;
+import idea.verlif.easy.dict.EasyDict;
+import idea.verlif.easy.dict.properties.PropertiesDictProvider;
+
 import java.util.Locale;
 
 public class MessageUtil {
 
-    private static final MessageGetter MESSAGE_GETTER;
+    private static final EasyDict EASY_DICT;
 
     static {
-        MESSAGE_GETTER = new MessageGetter();
-        try {
-            MESSAGE_GETTER.addResource("src\\main\\resources\\lang");
-            MESSAGE_GETTER.addResource("lang");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        EASY_DICT = new EasyDict();
+        PropertiesDictProvider provider = new PropertiesDictProvider();
+        provider.load("src\\main\\resources\\lang");
+        provider.load("lang");
+        provider.load(".\\");
+        EASY_DICT.addProvider(provider);
     }
 
     private MessageUtil() {
     }
 
     public static String get(String code) {
-        return MESSAGE_GETTER.get(code);
+        return EASY_DICT.get("zh").query(code);
     }
 
     public static String get(String code, Locale locale) {
-        return MESSAGE_GETTER.get(code, locale);
+        return EASY_DICT.get(locale.toLanguageTag()).query(code);
     }
 
     public static String get(String code, String tag) {
-        return MESSAGE_GETTER.get(code, tag);
+        return EASY_DICT.get(tag).query(code);
     }
 }

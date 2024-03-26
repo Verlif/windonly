@@ -17,18 +17,18 @@
     <dependencies>
         <dependency>
             <groupId>com.github.Verlif</groupId>
-            <artifactId>easy-language</artifactId>
-            <version>0.3</version>
+            <artifactId>easy-dict</artifactId>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.github.Verlif</groupId>
             <artifactId>easy-file</artifactId>
-            <version>0.1</version>
+            <version>0.2.1</version>
         </dependency>
         <dependency>
             <groupId>com.github.Verlif</groupId>
             <artifactId>socket-point</artifactId>
-            <version>1.1</version>
+            <version>1.1.1</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -91,10 +91,11 @@
                     <execution>
                         <id>default-cli</id>
                         <configuration>
+                            <executable>C:\Program Files\Java\jdk-17\bin\java</executable>
                             <mainClass>idea.verlif.windonly/idea.verlif.windonly.WindonlyApplication</mainClass>
-                            <launcher>app</launcher>
-                            <jlinkZipName>app</jlinkZipName>
-                            <jlinkImageName>app</jlinkImageName>
+                            <launcher>windonly</launcher>
+                            <jlinkZipName>windonly</jlinkZipName>
+                            <jlinkImageName>windonly</jlinkImageName>
                             <noManPages>true</noManPages>
                             <stripDebug>true</stripDebug>
                             <noHeaderFiles>true</noHeaderFiles>

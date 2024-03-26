@@ -1,0 +1,33 @@
+# Windonly
+
+简单好用的粘贴面板，用于粘贴文本与文件。
+
+- 将文件、文本等拖拽到面板即可添加。
+- 从面板拖出数据即可粘贴。
+- 支持多个工作区，每个工作区数据独立。
+- 工作区锁定，防止操作。
+- 窗口置顶，方便快速复制与粘贴。
+- 窗口贴边，鼠标展开，移出隐藏。
+
+## 图片
+
+![主要页面](docs/images/mainWindow.png)
+
+![图片预览器](docs/images/imagePreviewer.png)
+
+## 启动
+
+JDK 17，通过直接运行WindonlyApplication直接启动，或自行打包。
+
+## 打包
+
+打包推荐使用`jlink`和`jpackage`。
+
+1. 更改`pom.xml`文件中的`build > plugins > plugin`下`org.openjfx`插件的`executable`标签值，改为本机的**jdk17的java可执行地址**。
+2. 使用`jlink`生成运行文件，运行文件位于根目录下`target/windonly`中。至此就已经有可以运行的`bat`文件了（`target/windonly/bin.windonly.bat`）。
+3. 使用以下命令运行`jpackage`，这里的`jpackage`地址填入本机的执行地址。生成的文件位于根目录下的`windonly`文件夹中。
+
+    `"C:\Program Files\Java\jdk-17\bin\jpackage" --name windonly --type app-image -m idea.verlif.windonly/idea.verlif.windonly.WindonlyApplication --runtime-image .\target\windonly\ --icon src/main/resources/images/windonly.ico --java-options "-Dfile.encoding=utf-8"`
+
+4. 将语言文件复制到`windonly`文件夹下。
+5. 运行`windonly`中的`windonly.exe`。
