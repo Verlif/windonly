@@ -1,29 +1,13 @@
 package idea.verlif.windonly.stage;
 
-import idea.verlif.windonly.WindonlyException;
-import idea.verlif.windonly.config.WindonlyConfig;
-import idea.verlif.windonly.utils.MessageUtil;
+import javafx.scene.image.Image;
 import idea.verlif.windonly.utils.ScreenUtil;
 import javafx.animation.ScaleTransition;
-import javafx.event.EventHandler;
-import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.text.Font;
-import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.io.IOException;
-import java.io.InputStream;
-
-public class ImagePreviewer extends Stage {
-
-    private final BorderPane borderPane;
+public class ImagePreviewer extends BaseStage {
 
     // 放大倍率
     private double magnification = 1.0;
@@ -38,19 +22,10 @@ public class ImagePreviewer extends Stage {
     }
 
     public ImagePreviewer(Image image) {
-        borderPane = new BorderPane();
+        super();
+        BorderPane borderPane = getBorderPane();
         ImageView imageView = new ImageView(image);
         borderPane.setCenter(imageView);
-        Scene scene = new Scene(borderPane);
-        setScene(scene);
-        setTitle("Windonly");
-        try (InputStream iconStream = getClass().getResourceAsStream("/images/icon.png")) {
-            if (iconStream != null) {
-                getIcons().add(new Image(iconStream));
-            }
-        } catch (IOException e) {
-            throw new WindonlyException(e);
-        }
         // 设置初始化大小
         double[] screenSize = ScreenUtil.getScreenSize();
         if (screenSize[0] / 2 > image.getWidth() && screenSize[1] / 2 > image.getHeight()) {
@@ -80,33 +55,15 @@ public class ImagePreviewer extends Stage {
         });
         // 拖拽
         borderPane.setOnMousePressed(mouseEvent -> {
-            // 窗口置顶快捷键
-            if (mouseEvent.getButton() == MouseButton.MIDDLE) {
-                setAlwaysOnTop(!isAlwaysOnTop());
-                if (isAlwaysOnTop()) {
-                    showTip(MessageUtil.get("windowPin"));
-                } else {
-                    closeTip();
-                }
-            } else {
-                startX = mouseEvent.getX();
-                imageStartX = imageView.getTranslateX();
-                startY = mouseEvent.getY();
-                imageStartY = imageView.getTranslateY();
-            }
+            startX = mouseEvent.getX();
+            imageStartX = imageView.getTranslateX();
+            startY = mouseEvent.getY();
+            imageStartY = imageView.getTranslateY();
         });
         borderPane.setOnMouseDragged(mouseDragEvent -> {
             imageView.setTranslateX(imageStartX + mouseDragEvent.getX() - startX);
             imageView.setTranslateY(imageStartY + mouseDragEvent.getY() - startY);
         });
-    }
-
-    private void showTip(String text) {
-        setTitle(text);
-    }
-
-    private void closeTip() {
-        setTitle("Windonly");
     }
 
     private void setImageSize(ImageView imageView, double width, double height) {
@@ -129,4 +86,5 @@ public class ImagePreviewer extends Stage {
             imageView.setFitHeight(height);
         }
     }
+
 }

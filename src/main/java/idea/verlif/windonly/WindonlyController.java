@@ -88,22 +88,19 @@ public class WindonlyController implements Initializable, Serializable {
                 list.getItems().addAll(search);
             }
         });
-        // 添加输入事项
-        input.setOnKeyPressed(keyEvent -> {
-            if (keyEvent.getCode() == KeyCode.ENTER && !input.getText().isEmpty()) {
-                handleDragItem(input.getText());
-                clearInput();
-            }
-        });
-        // 对CtrlV特殊处理
         input.setOnKeyPressed(keyEvent -> {
             if (keyEvent.isControlDown() && keyEvent.getCode() == KeyCode.V) {
+                // 对CtrlV特殊处理
                 Platform.runLater(() -> {
                     Object o = ClipboardUtil.getFormSystemClipboard();
                     if (!(o instanceof String)) {
                         handleDragItem(o);
                     }
                 });
+            } else if (keyEvent.getCode() == KeyCode.ENTER && !input.getText().isEmpty()) {
+                // 添加输入事项
+                handleDragItem(input.getText());
+                clearInput();
             }
         });
         // 设置list
@@ -302,6 +299,11 @@ public class WindonlyController implements Initializable, Serializable {
         }
     }
 
+    /**
+     * 编辑锁
+     *
+     * @param lock 是否锁定当前工作区内容
+     */
     private void switchLock(boolean lock) {
         try (InputStream resourceAsStream = getClass().getResourceAsStream(lock ? "/images/lock.png" : "/images/unlock.png")) {
             if (resourceAsStream != null) {
@@ -312,6 +314,11 @@ public class WindonlyController implements Initializable, Serializable {
         }
     }
 
+    /**
+     * 切换贴边
+     *
+     * @param slide 是否贴边
+     */
     private void switchSlide(boolean slide) {
         try (InputStream resourceAsStream = getClass().getResourceAsStream(slide ? "/images/slide.png" : "/images/unslide.png")) {
             if (resourceAsStream != null) {
@@ -360,31 +367,44 @@ public class WindonlyController implements Initializable, Serializable {
             @Override
             public void handlerMessage(Message message) {
                 switch (message.what) {
-                    case Message.What.COPY -> {
+                    case Message.What.COPY: {
                         ProjectItem focusedItem = list.getFocusModel().getFocusedItem();
                         ClipboardUtil.copyToSystemClipboard(focusedItem.getSource());
                     }
-                    case Message.What.DELETE -> {
+                    break;
+                    case Message.What.DELETE: {
                         ProjectItem focusedItem = list.getFocusModel().getFocusedItem();
                         Platform.runLater(() -> {
                             removeItem(focusedItem, true);
                             save();
                         });
                     }
-                    case Message.What.SET_TO_TOP -> {
+                    break;
+                    case Message.What.SET_TO_TOP: {
                         ProjectItem focusedItem = list.getFocusModel().getFocusedItem();
                         Platform.runLater(() -> {
                             topItem(focusedItem, true);
                             save();
                         });
                     }
-                    case Message.What.WINDOW_PIN ->
-                            Platform.runLater(() -> switchPin(WindonlyConfig.getInstance().isAlwaysShow()));
-                    case Message.What.ARCHIVE_LOCK ->
-                            Platform.runLater(() -> switchLock(WindonlyConfig.getInstance().isLock()));
-                    case Message.What.ARCHIVE_SAVE -> Platform.runLater(() -> save());
-                    case Message.What.WINDOW_SLIDE ->
-                            Platform.runLater(() -> switchSlide(WindonlyConfig.getInstance().isSlide()));
+                    break;
+                    case Message.What.WINDOW_PIN:
+                        Platform.runLater(() -> switchPin(WindonlyConfig.getInstance().isAlwaysShow()));
+                        break;
+                    case Message.What.ARCHIVE_LOCK:
+                        Platform.runLater(() -> switchLock(WindonlyConfig.getInstance().isLock()));
+                        break;
+                    case Message.What.ARCHIVE_SAVE:
+                        Platform.runLater(() -> save());
+                        break;
+                    case Message.What.WINDOW_SLIDE:
+                        Platform.runLater(() -> switchSlide(WindonlyConfig.getInstance().isSlide()));
+                        break;
+                    case Message.What.WINDOW_NOT_FOCUS:
+                        if (WindonlyConfig.getInstance().isSlide()) {
+                            new Message(Message.What.WINDOW_SLIDE_IN).send();
+                        }
+                        break;
                 }
             }
         };
@@ -517,6 +537,9 @@ public class WindonlyController implements Initializable, Serializable {
 
         @Override
         public void handle(DragEvent dragEvent) {
+            if (dragEvent.getEventType() == DragEvent.DRAG_ENTERED) {
+                onMouseEntered();
+            }
             Dragboard dragboard = dragEvent.getDragboard();
             if (dragboard.hasFiles()) {
                 handleDragItem(dragboard.getFiles());
@@ -691,34 +714,34 @@ public class WindonlyController implements Initializable, Serializable {
             }
         }
 
-        public static final class ProjectItemData implements Serializable {
-            private ProjectItem.Type type;
-            private String source;
-
-            public ProjectItemData() {
-            }
-
-            private ProjectItemData(ProjectItem.Type type, String source) {
-                this.type = type;
-                this.source = source;
-            }
-
-            public ProjectItem.Type getType() {
-                return type;
-            }
-
-            public void setType(ProjectItem.Type type) {
-                this.type = type;
-            }
-
-            public String getSource() {
-                return source;
-            }
-
-            public void setSource(String source) {
-                this.source = source;
-            }
-        }
     }
 
+    public static final class ProjectItemData implements Serializable {
+        private ProjectItem.Type type;
+        private String source;
+
+        public ProjectItemData() {
+        }
+
+        private ProjectItemData(ProjectItem.Type type, String source) {
+            this.type = type;
+            this.source = source;
+        }
+
+        public ProjectItem.Type getType() {
+            return type;
+        }
+
+        public void setType(ProjectItem.Type type) {
+            this.type = type;
+        }
+
+        public String getSource() {
+            return source;
+        }
+
+        public void setSource(String source) {
+            this.source = source;
+        }
+    }
 }

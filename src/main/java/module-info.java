@@ -7,7 +7,6 @@ module idea.verlif.windonly {
     requires easy.file;
     requires socket.point;
     requires com.fasterxml.jackson.databind;
-    requires jintellitype;
 
     opens idea.verlif.windonly to javafx.fxml;
     exports idea.verlif.windonly;

@@ -1,15 +1,12 @@
 package idea.verlif.windonly.utils;
 
-import idea.verlif.windonly.components.ProjectItem;
-import idea.verlif.windonly.components.item.FileItem;
-import idea.verlif.windonly.components.item.ImageOne;
-import idea.verlif.windonly.components.item.TextItem;
 import javafx.application.Platform;
 import javafx.scene.image.Image;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 
 public class ClipboardUtil {
@@ -19,7 +16,7 @@ public class ClipboardUtil {
         if (target instanceof List) {
             content.putFiles((List<File>) target);
         } else if (target instanceof File) {
-            content.putFiles(List.of((File) target));
+            content.putFiles(Collections.singletonList((File) target));
         } else if (target instanceof Image) {
             content.putImage((Image) target);
         } else {

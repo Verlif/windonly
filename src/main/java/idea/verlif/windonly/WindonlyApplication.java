@@ -1,17 +1,15 @@
 package idea.verlif.windonly;
 
+import javafx.scene.image.Image;
 import idea.verlif.windonly.config.WindonlyConfig;
 import idea.verlif.windonly.manage.inner.Handler;
 import idea.verlif.windonly.manage.inner.Message;
 import idea.verlif.windonly.utils.ScreenUtil;
-import javafx.animation.TranslateTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.image.Image;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,7 +33,16 @@ public class WindonlyApplication extends Application {
         stage.setScene(scene);
         stage.setAlwaysOnTop(WindonlyConfig.getInstance().isAlwaysShow());
         stage.show();
+        // 自动存储
         stage.setOnHidden(windowEvent -> new Message(Message.What.ARCHIVE_SAVE).send());
+        // 窗口聚焦事件
+        stage.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue) {
+                new Message(Message.What.WINDOW_FOCUS).send();
+            } else {
+                new Message(Message.What.WINDOW_NOT_FOCUS).send();
+            }
+        });
         // 注册消息处理
         register();
     }
@@ -45,10 +52,12 @@ public class WindonlyApplication extends Application {
             @Override
             public void handlerMessage(Message message) {
                 switch (message.what) {
-                    case Message.What.WINDOW_PIN -> Platform.runLater(() -> {
-                        mainStage.setAlwaysOnTop(WindonlyConfig.getInstance().isAlwaysShow());
-                    });
-                    case Message.What.WINDOW_SLIDE -> {
+                    case Message.What.WINDOW_PIN:
+                        Platform.runLater(() -> {
+                            mainStage.setAlwaysOnTop(WindonlyConfig.getInstance().isAlwaysShow());
+                        });
+                        break;
+                    case Message.What.WINDOW_SLIDE: {
                         if (WindonlyConfig.getInstance().isSlide()) {
                             double screenWidth = ScreenUtil.getScreenSize()[0];
                             double thisWidth = mainStage.getWidth();
@@ -57,29 +66,37 @@ public class WindonlyApplication extends Application {
                             new Message(Message.What.WINDOW_SLIDE_OUT).send();
                         }
                     }
-                    case Message.What.WINDOW_SLIDE_OUT -> {
+                    break;
+                    case Message.What.WINDOW_SLIDE_OUT: {
                         if (left) {
                             slideLeft();
                         } else {
                             slideRight();
                         }
                     }
-                    case Message.What.WINDOW_SLIDE_IN -> {
-                        if (left) {
-                            hideLeft();
-                        } else {
-                            hideRight();
+                    break;
+                    case Message.What.WINDOW_SLIDE_IN: {
+                        if (!mainStage.isFocused()) {
+                            if (left) {
+                                hideLeft();
+                            } else {
+                                hideRight();
+                            }
                         }
                     }
-                    case Message.What.WINDOW_MIN -> {
+                    break;
+                    case Message.What.WINDOW_MIN: {
                         Platform.runLater(() -> mainStage.setMaximized(false));
                     }
-                    case Message.What.WINDOW_MAX -> {
+                    break;
+                    case Message.What.WINDOW_MAX: {
                         Platform.runLater(() -> mainStage.setMaximized(true));
                     }
-                    case Message.What.WINDOW_CLOSE -> {
+                    break;
+                    case Message.What.WINDOW_CLOSE: {
                         Platform.runLater(() -> mainStage.close());
                     }
+                    break;
                 }
             }
         };

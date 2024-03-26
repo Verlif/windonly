@@ -69,6 +69,14 @@ public class Message implements Serializable {
          * 关闭窗口
          */
         int WINDOW_CLOSE = 2007;
+        /**
+         * 窗口聚焦
+         */
+        int WINDOW_FOCUS = 2008;
+        /**
+         * 窗口失焦
+         */
+        int WINDOW_NOT_FOCUS = 2009;
 
         /**
          * 锁定当前工作区
