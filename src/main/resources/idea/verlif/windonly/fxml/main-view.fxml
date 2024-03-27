@@ -24,6 +24,9 @@
                     <center>
                         <ChoiceBox fx:id="archiveBox"/>
                     </center>
+                    <BorderPane.margin>
+                        <Insets right="2.0"/>
+                    </BorderPane.margin>
                 </BorderPane>
             </left>
             <center>

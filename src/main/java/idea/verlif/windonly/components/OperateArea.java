@@ -22,20 +22,10 @@ public class OperateArea extends VBox {
         // 顶部居中布局
         setAlignment(Pos.TOP_CENTER);
         setSpacing(4);
-        // 复制
-        Label copyLabel = new Label(MessageUtil.get("copy"));
-        copyLabel.setOnMouseClicked(mouseEvent -> new Message(Message.What.COPY).send(mouseEvent));
-        copyLabel.setStyle(BUTTON_STYLE);
-        copyLabel.setPadding(new ButtonInsets());
-        // 置顶
-        Label setToTop = new Label(MessageUtil.get("setToTop"));
-        setToTop.setOnMouseClicked(mouseEvent -> new Message(Message.What.SET_TO_TOP).send(mouseEvent));
-        setToTop.setStyle(BUTTON_STYLE);
-        setToTop.setPadding(new ButtonInsets());
         // 删除
         Label delete = new DeleteButton();
 
-        getChildren().addAll(copyLabel, setToTop, delete);
+        getChildren().addAll(delete);
     }
 
     private static final class DeleteButton extends Label {

@@ -7,6 +7,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.text.Font;
 
@@ -56,6 +57,17 @@ public class TextPreviewer extends BaseStage {
                 pinTop();
             }
         });
+        // 置顶
+        textArea.setOnMousePressed(mouseEvent -> {
+            // 窗口置顶快捷键
+            if (mouseEvent.getButton() == MouseButton.MIDDLE) {
+                if (isAlwaysOnTop()) {
+                    unpinTop();
+                } else {
+                    pinTop();
+                }
+            }
+        });
         // 添加菜单
         textArea.setContextMenu(new ContextMenu(copy, selectAll, lineWrap, pinTop));
         textArea.setOnContextMenuRequested(contextMenuEvent -> {
@@ -63,6 +75,16 @@ public class TextPreviewer extends BaseStage {
             lineWrap.setText((textArea.isWrapText() ? "ON -" : "OFF-") + MessageUtil.get("autoLineWrap"));
             pinTop.setText((isAlwaysOnTop() ? "ON -" : "OFF-") + MessageUtil.get("setToTop"));
         });
+        textArea.setStyle(".text-area{" +
+                "    -fx-background-insets: 0;" +
+                "    -fx-background-color: transparent, white, transparent, white;" +
+                "}" +
+                ".text-area .content {" +
+                "    -fx-background-color: transparent, white, transparent, white;" +
+                "}" +
+                ".text-area:focused {" +
+                "    -fx-background-color: transparent, white, transparent, white;" +
+                "}");
         return textArea;
     }
 

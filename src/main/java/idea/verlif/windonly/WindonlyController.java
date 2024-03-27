@@ -3,7 +3,9 @@ package idea.verlif.windonly;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import idea.verlif.windonly.components.MainContextMenu;
 import idea.verlif.windonly.components.ProjectItem;
+import idea.verlif.windonly.components.RemoteContextMenu;
 import idea.verlif.windonly.components.RemoteProjectItem;
 import idea.verlif.windonly.components.alert.ConfirmAlert;
 import idea.verlif.windonly.components.alert.InputAlert;
@@ -90,9 +92,9 @@ public class WindonlyController implements Initializable, Serializable {
         });
         input.setOnKeyPressed(keyEvent -> {
             if (keyEvent.isControlDown() && keyEvent.getCode() == KeyCode.V) {
+                Object o = ClipboardUtil.getFormSystemClipboard();
                 // 对CtrlV特殊处理
                 Platform.runLater(() -> {
-                    Object o = ClipboardUtil.getFormSystemClipboard();
                     if (!(o instanceof String)) {
                         handleDragItem(o);
                     }
@@ -107,6 +109,9 @@ public class WindonlyController implements Initializable, Serializable {
         list.setFocusTraversable(false);
         // 设置数据展示区拖入事件
         list.setOnDragEntered(new ListOnDrag());
+        list.setContextMenu(new MainContextMenu());
+        // 设置远端面板右键按钮
+        remoteList.setContextMenu(new RemoteContextMenu());
         // 设置pin
         pinView.getParent().setOnMouseClicked(mouseEvent -> {
             boolean alwaysShow = WindonlyConfig.getInstance().isAlwaysShow();
@@ -137,6 +142,7 @@ public class WindonlyController implements Initializable, Serializable {
         registerHandler();
         // 切换到回当前分区
         selectArchive(Archive.getCurrentArchive());
+        switchLock(WindonlyConfig.getInstance().isLock());
         switchPin(WindonlyConfig.getInstance().isAlwaysShow());
         switchSlide(WindonlyConfig.getInstance().isSlide());
 
@@ -171,7 +177,7 @@ public class WindonlyController implements Initializable, Serializable {
         // 设置list
         remoteList.setFocusTraversable(false);
         // 设置数据展示区拖入事件
-        remoteList.setOnDragEntered(new ListOnDrag());
+        remoteList.setOnDragEntered(new RemoteListOnDrag());
         remoteList.setOnDragEntered(new RemoteListOnDrag());
         remoteDataManager.init(remoteList);
 
@@ -420,9 +426,9 @@ public class WindonlyController implements Initializable, Serializable {
             FileItem fileItem = new FileItem((File) o);
             fileItem.init();
             projectItem = new ProjectItem(fileItem);
-        } else if (o instanceof Image) {
-            if (((Image) o).getUrl() != null) {
-                ImageOne imageOne = new ImageOne((Image) o);
+        } else if (o instanceof Image image) {
+            if (image.getUrl() != null) {
+                ImageOne imageOne = new ImageOne(image);
                 imageOne.init();
                 projectItem = new ProjectItem(imageOne);
             } else {
@@ -451,8 +457,10 @@ public class WindonlyController implements Initializable, Serializable {
      * @param projectItem 目标置顶项目
      */
     private void topItem(ProjectItem projectItem, boolean check) {
-        projectItemManager.remove(projectItem, check);
-        projectItemManager.add(0, projectItem, check);
+        if (projectItem != null) {
+            projectItemManager.remove(projectItem, check);
+            projectItemManager.add(0, projectItem, check);
+        }
     }
 
     /**
@@ -504,10 +512,13 @@ public class WindonlyController implements Initializable, Serializable {
 
     public void onMouseExited() {
         if (WindonlyConfig.getInstance().isSlide()) {
-            new Message(Message.What.WINDOW_SLIDE_IN).send();
+            new Message(Message.What.WINDOW_REQUIRE_HIDDEN).send();
         }
     }
 
+    /**
+     * 输入框拖拽处理
+     */
     private final class InputOnDrag implements EventHandler<DragEvent> {
 
         @Override
@@ -533,7 +544,10 @@ public class WindonlyController implements Initializable, Serializable {
         }
     }
 
-    private final class ListOnDrag implements EventHandler<DragEvent> {
+    /**
+     * 列表拖拽处理
+     */
+    private class ListOnDrag implements EventHandler<DragEvent> {
 
         @Override
         public void handle(DragEvent dragEvent) {
@@ -552,31 +566,23 @@ public class WindonlyController implements Initializable, Serializable {
                 handleDragItem(dragboard.getUrl());
             }
         }
+
+        protected void handleDragItem(Object o) {
+            WindonlyController.this.handleDragItem(o);
+        }
     }
 
-    private final static class RemoteListOnDrag implements EventHandler<DragEvent> {
-
-        @Override
-        public void handle(DragEvent dragEvent) {
-            Dragboard dragboard = dragEvent.getDragboard();
-            if (dragboard.hasFiles()) {
-                handleDragItem(dragboard.getFiles());
-            } else if (dragboard.hasImage()) {
-                Image image = dragboard.getImage();
-                handleDragItem(image);
-            } else if (dragboard.hasString()) {
-                handleDragItem(dragboard.getString());
-            } else if (dragboard.hasUrl()) {
-                handleDragItem(dragboard.getUrl());
-            }
-        }
+    /**
+     * 远端列表拖拽处理
+     */
+    private final class RemoteListOnDrag extends ListOnDrag {
 
         /**
          * 处理拖拽进入的数据，并保存数据
          *
          * @param o 数据对象
          */
-        private void handleDragItem(Object o) {
+        protected void handleDragItem(Object o) {
             RemoteItemData remoteItemData = new RemoteItemData();
             RemoteProjectItem.Type type;
             String data;

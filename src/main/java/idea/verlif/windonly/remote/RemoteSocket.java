@@ -30,6 +30,7 @@ public class RemoteSocket extends SocketPoint {
         setConnectedListener(new PassConnectedListener());
         setMessageListener(new MessageHandler());
         super.start(config);
+        registerRemoteHandler();
     }
 
     public String getKey() {
