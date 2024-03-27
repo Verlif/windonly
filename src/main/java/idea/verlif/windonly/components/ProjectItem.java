@@ -1,6 +1,7 @@
 package idea.verlif.windonly.components;
 
 import idea.verlif.windonly.components.item.Item;
+import idea.verlif.windonly.manage.inner.Message;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -31,13 +32,17 @@ public class ProjectItem extends HBox implements Item<Object> {
         init();
     }
 
+    protected Node getOperateNode() {
+        return new OperateArea();
+    }
+
     @Override
     public void init() {
         // 设置底线
         setPadding(new Insets(4));
 
         ObservableList<Node> children = getChildren();
-        children.add(new OperateArea());
+        children.add(getOperateNode());
         children.add(node);
         // 添加拖拽处理器
         setOnDragDetected(event -> {
@@ -54,6 +59,8 @@ public class ProjectItem extends HBox implements Item<Object> {
             }
             db.setContent(content);
         });
+        // 拖拽出框时默认失焦
+        setOnDragExited(event -> new Message(Message.What.WINDOW_NOT_FOCUS).send());
     }
 
     private Type setType(Object source) {

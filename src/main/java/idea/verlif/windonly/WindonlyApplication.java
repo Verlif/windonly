@@ -76,6 +76,14 @@ public class WindonlyApplication extends Application {
                     }
                     break;
                     case Message.What.WINDOW_SLIDE_IN: {
+                        if (left) {
+                            hideLeft();
+                        } else {
+                            hideRight();
+                        }
+                    }
+                    break;
+                    case Message.What.WINDOW_REQUIRE_HIDDEN: {
                         if (!mainStage.isFocused()) {
                             if (left) {
                                 hideLeft();

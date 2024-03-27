@@ -77,6 +77,10 @@ public class Message implements Serializable {
          * 窗口失焦
          */
         int WINDOW_NOT_FOCUS = 2009;
+        /**
+         * 窗口请求侧边隐藏
+         */
+        int WINDOW_REQUIRE_HIDDEN = 2010;
 
         /**
          * 锁定当前工作区
