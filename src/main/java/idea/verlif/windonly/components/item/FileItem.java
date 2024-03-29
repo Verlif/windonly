@@ -1,15 +1,15 @@
 package idea.verlif.windonly.components.item;
 
 import idea.verlif.windonly.config.WindonlyConfig;
-import javafx.geometry.NodeOrientation;
-import javafx.scene.layout.HBox;
+import javafx.geometry.Pos;
+import javafx.scene.layout.VBox;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class FileItem extends HBox implements Item<List<File>> {
+public class FileItem extends VBox implements Item<List<File>> {
 
     private final FileOne[] files;
 
@@ -27,8 +27,7 @@ public class FileItem extends HBox implements Item<List<File>> {
 
     @Override
     public void init() {
-        setNodeOrientation(NodeOrientation.LEFT_TO_RIGHT);
-        setHeight(WindonlyConfig.getInstance().getImageSize() + 10);
+        setAlignment(Pos.CENTER_LEFT);
         setSpacing(WindonlyConfig.getInstance().getCalcFontSize() / 2);
         // 添加文件项目
         for (FileOne file : files) {

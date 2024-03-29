@@ -16,4 +16,13 @@ public class SystemExecUtil {
             return false;
         }
     }
+
+    public static boolean selectFileByExplorer(String path) {
+        try {
+            exec("explorer.exe /select, " + path);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
 }

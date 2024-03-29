@@ -137,7 +137,7 @@ public class Archive implements Serializable {
         }
         if (list.isEmpty()) {
             // 添加主工作区
-            list.add(SETTINGS.currentArchive);
+            list.add(MessageUtil.get("mainArchive"));
         }
         return list;
     }

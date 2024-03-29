@@ -5,6 +5,7 @@ import idea.verlif.windonly.utils.ScreenUtil;
 import javafx.animation.ScaleTransition;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
+import javafx.stage.Modality;
 import javafx.util.Duration;
 
 public class ImagePreviewer extends BaseStage {
@@ -27,12 +28,14 @@ public class ImagePreviewer extends BaseStage {
         ImageView imageView = new ImageView(image);
         borderPane.setCenter(imageView);
         // 设置初始化大小
-        double[] screenSize = ScreenUtil.getScreenSize();
+        double[] screenSize = ScreenUtil.getScreenSize(this);
         if (screenSize[0] / 2 > image.getWidth() && screenSize[1] / 2 > image.getHeight()) {
             setImageSize(imageView, image.getWidth(), image.getHeight());
         } else {
             setImageSize(imageView, screenSize[0] / 2, screenSize[1] / 2);
         }
+        // 设置最小宽度
+        setMinWidth(200);
 
         // 设置自适应
         widthProperty().addListener((observableValue, oldWidth, newWidth) -> {
@@ -46,7 +49,7 @@ public class ImagePreviewer extends BaseStage {
         });
         // 设置鼠标滚轮滚动缩放
         imageView.setOnScroll(scrollEvent -> {
-            double temp = magnification + scrollEvent.getDeltaY() / 2;
+            double temp = magnification + (scrollEvent.getDeltaY() > 0 ? 0.2 : -0.2);
             magnification = Math.max(temp, 0.1);
             ScaleTransition st = new ScaleTransition(Duration.millis(500), imageView);
             st.setToX(magnification);

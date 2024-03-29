@@ -32,7 +32,7 @@ public class WindonlyConfig implements Savable<String> {
     /**
      * 图片大小
      */
-    private double imageSize = fontSize * 8;
+    private double imageSize = fontSize * 1;
     /**
      * 放大倍率
      */

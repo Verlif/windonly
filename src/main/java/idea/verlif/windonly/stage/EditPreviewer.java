@@ -38,10 +38,6 @@ public class EditPreviewer extends BaseStage {
             getBorderPane().setCenter(textArea);
             // 初始化尺寸
             initSize();
-            // 初始化前台
-            if (WindonlyConfig.getInstance().isAlwaysShow()) {
-                pinTop();
-            }
             // 关闭时有更新就触发列表更新
             setOnHidden(windowEvent -> {
                 if (changed) {
@@ -57,7 +53,7 @@ public class EditPreviewer extends BaseStage {
     private void initSize() {
         BorderPane borderPane = getBorderPane();
         borderPane.setPadding(new Insets(0, 5, 5, 5));
-        double max = ScreenUtil.getScreenSize()[1] - 400;
+        double max = ScreenUtil.getScreenSize(this)[1] - 400;
         double preHeight = textArea.getText().split("\n").length * (textArea.getFont().getSize() + 8);
         double height = Math.min(
                 preHeight + 200,
@@ -119,6 +115,7 @@ public class EditPreviewer extends BaseStage {
         this.changed = true;
         Item<Object> objectItem = item.getItem();
         objectItem.setSource(textArea.getText());
+        new Message(Message.What.ARCHIVE_SAVE).send();
         EditPreviewer.this.setTitle(MessageUtil.get("edit"));
     }
 }

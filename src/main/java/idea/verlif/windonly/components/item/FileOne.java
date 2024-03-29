@@ -1,7 +1,10 @@
 package idea.verlif.windonly.components.item;
 
+import idea.verlif.easy.file.util.FileUtil;
 import idea.verlif.windonly.config.WindonlyConfig;
 import idea.verlif.windonly.stage.ImagePreviewer;
+import idea.verlif.windonly.stage.TextPreviewer;
+import idea.verlif.windonly.utils.FileTypeUtil;
 import idea.verlif.windonly.utils.SystemExecUtil;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -24,8 +27,6 @@ import javax.swing.filechooser.FileSystemView;
 
 public class FileOne extends BorderPane implements Item<File> {
 
-    private static final String[] PICTURE_SUFFIX = {"png", "jpg", "jpeg", "bmp", "gif"};
-
     private final File file;
 
     public FileOne(File file) {
@@ -38,13 +39,24 @@ public class FileOne extends BorderPane implements Item<File> {
         setPadding(ItemInsets.INSETS);
 
         // 设置文件点击事件
-        if (isImage(file)) {
+        if (FileTypeUtil.isImage(file)) {
             setOnMouseClicked(mouseEvent -> {
                 if (mouseEvent.getClickCount() > 1) {
                     if (mouseEvent.isControlDown()) {
                         SystemExecUtil.openFileByExplorer(file.getAbsolutePath());
                     } else {
                         new ImagePreviewer(file.getAbsolutePath()).show();
+                    }
+                }
+            });
+        } else if (FileTypeUtil.isText(file)) {
+            setOnMouseClicked(mouseEvent -> {
+                if (mouseEvent.getClickCount() > 1) {
+                    if (mouseEvent.isControlDown()) {
+                        SystemExecUtil.openFileByExplorer(file.getAbsolutePath());
+                    } else {
+                        String text = FileUtil.readContentAsString(file);
+                        new TextPreviewer(text).show();
                     }
                 }
             });
@@ -56,16 +68,6 @@ public class FileOne extends BorderPane implements Item<File> {
             });
         }
         refresh();
-    }
-
-    private boolean isImage(File file) {
-        String filename = file.getName().toLowerCase();
-        for (String suffix : PICTURE_SUFFIX) {
-            if (filename.endsWith(suffix)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private Node createFilenameNode(File file) {
@@ -98,15 +100,14 @@ public class FileOne extends BorderPane implements Item<File> {
 
     @Override
     public void refresh() {
-        // 设置字体
-        double height = WindonlyConfig.getInstance().getCalcFontSize() * 8;
-        setPrefWidth(height);
-        setPrefHeight(height);
         // 设置文件图标与提示文本
-        setCenter(new FileIconImageView(file));
+        FileIconImageView iconView = new FileIconImageView(file);
+        setLeft(iconView);
         Node nameNode = createFilenameNode(file);
-        setBottom(nameNode);
-        setAlignment(nameNode, Pos.CENTER);
+        setCenter(nameNode);
+        setMargin(nameNode, new Insets(0, 0, 0, 4));
+        setAlignment(nameNode, Pos.CENTER_LEFT);
+        setAlignment(iconView, Pos.CENTER_LEFT);
     }
 
     /**
@@ -117,12 +118,9 @@ public class FileOne extends BorderPane implements Item<File> {
         public FileIconImageView(File file) {
             super();
             Image image = null;
-            String filename = file.getName().toLowerCase();
-            for (String suffix : PICTURE_SUFFIX) {
-                if (filename.endsWith(suffix)) {
-                    image = new Image(file.getAbsolutePath());
-                    break;
-                }
+            // TODO: 过大的图片会导致浏览卡顿
+            if (FileTypeUtil.isImage(file) && file.length() < 1024 * 1024) {
+                image = new Image(file.getAbsolutePath());
             }
             // 默认图片
             if (image == null) {
@@ -130,10 +128,15 @@ public class FileOne extends BorderPane implements Item<File> {
             }
             if (image != null) {
                 double imageHeight = image.getHeight();
-                if (imageHeight > WindonlyConfig.getInstance().getImageSize()) {
+                double imageSize = WindonlyConfig.getInstance().getImageSize();
+                if (imageHeight > imageSize) {
                     // 等比缩小
-                    setFitWidth(WindonlyConfig.getInstance().getImageSize() / imageHeight * image.getWidth());
-                    setFitHeight(WindonlyConfig.getInstance().getImageSize());
+                    setFitWidth(imageSize / imageHeight * image.getWidth());
+                    setFitHeight(imageSize);
+                } else {
+                    // 等比缩小
+                    setFitWidth(image.getWidth());
+                    setFitHeight(imageHeight);
                 }
                 setImage(image);
             }
@@ -145,8 +148,13 @@ public class FileOne extends BorderPane implements Item<File> {
         private Image getFileImage(File file) {
             if (file.isDirectory()) {
                 InputStream stream = getClass().getResourceAsStream("/images/file/directory.png");
+                if (stream == null) {
+                    stream = getClass().getResourceAsStream("/images/file/file.png");
+                }
                 if (stream != null) {
                     return new Image(stream);
+                } else {
+                    return null;
                 }
             } else {
                 ImageIcon icon = (ImageIcon) FileSystemView.getFileSystemView().getSystemIcon(file);
@@ -158,19 +166,11 @@ public class FileOne extends BorderPane implements Item<File> {
                         image.getHeight(null),
                         BufferedImage.TYPE_INT_ARGB
                 );
-                // TODO: 图标大小有误
                 Graphics2D g2d = bufferedImage.createGraphics();
                 g2d.drawImage(image, 0, 0, null);
                 g2d.dispose();
-
                 // 将 BufferedImage 转换为 JavaFX 的 Image
                 return SwingFXUtils.toFXImage(bufferedImage, null);
-            }
-            InputStream stream = getClass().getResourceAsStream("/images/file/file.png");
-            if (stream != null) {
-                return new Image(stream);
-            } else {
-                return null;
             }
         }
     }
@@ -180,10 +180,10 @@ public class FileOne extends BorderPane implements Item<File> {
         public static final ItemInsets INSETS = new ItemInsets();
 
         public ItemInsets() {
-            super(4 * WindonlyConfig.getInstance().getMagnification(),
-                    4 * WindonlyConfig.getInstance().getMagnification(),
-                    4 * WindonlyConfig.getInstance().getMagnification(),
-                    4 * WindonlyConfig.getInstance().getMagnification());
+            super(3 * WindonlyConfig.getInstance().getMagnification(),
+                    3 * WindonlyConfig.getInstance().getMagnification(),
+                    3 * WindonlyConfig.getInstance().getMagnification(),
+                    3 * WindonlyConfig.getInstance().getMagnification());
         }
     }
 }
