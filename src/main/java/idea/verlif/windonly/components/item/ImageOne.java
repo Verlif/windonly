@@ -24,8 +24,6 @@ public class ImageOne extends BorderPane implements Item<Image> {
     public void init() {
         // 设置宽高样式
         setPadding(ItemInsets.INSETS);
-
-
         // 设置双击打开
         setOnMouseClicked(mouseEvent -> {
             if (mouseEvent.getClickCount() == 2) {
@@ -66,7 +64,8 @@ public class ImageOne extends BorderPane implements Item<Image> {
         setPrefWidth(height);
         setPrefHeight(height);
         // 设置文件图标与提示文本
-        setCenter(new FileIconImageView(image));
+        FileIconImageView iconView = new FileIconImageView(image);
+        setCenter(iconView);
         Node nameNode = createFilenameNode(image);
         setBottom(nameNode);
         setAlignment(nameNode, Pos.CENTER);

@@ -25,6 +25,7 @@ import idea.verlif.windonly.stage.EditPreviewer;
 import idea.verlif.windonly.utils.ClipboardUtil;
 import idea.verlif.windonly.utils.IpUtil;
 import idea.verlif.windonly.utils.MessageUtil;
+import idea.verlif.windonly.utils.SystemExecUtil;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.Event;
@@ -101,12 +102,12 @@ public class WindonlyController implements Initializable, Serializable {
                 // 对CtrlV特殊处理
                 Platform.runLater(() -> {
                     if (!(o instanceof String)) {
-                        handleDragItem(o);
+                        requestAddItem(o);
                     }
                 });
             } else if (keyEvent.getCode() == KeyCode.ENTER && !input.getText().isEmpty()) {
                 // 添加输入事项
-                handleDragItem(input.getText());
+                requestAddItem(input.getText());
                 clearInput();
             }
         });
@@ -117,10 +118,8 @@ public class WindonlyController implements Initializable, Serializable {
         // 右键菜单
         MainContextMenu<Event> contextMenu = new MainContextMenu<>() {
             @Override
-            public void handle(Event event) {
-                ProjectItem selectedItem = getSelectedItem();
-                getEdit().setDisable(selectedItem == null
-                        || selectedItem.getType() != ProjectItem.Type.TEXT);
+            public ProjectItem onItem() {
+                return getSelectedItem();
             }
         };
         list.setContextMenu(contextMenu);
@@ -151,9 +150,8 @@ public class WindonlyController implements Initializable, Serializable {
         });
         // 工作区设定
         archiveBox.setPadding(new Insets(4, 0, 5, 0));
+        // 切换工作区
         archiveBox.valueProperty().addListener((observableValue, oldVal, newVal) -> {
-            // 保存当前的数据
-            save();
             load(newVal);
         });
         // 增加快捷方式
@@ -241,6 +239,9 @@ public class WindonlyController implements Initializable, Serializable {
 
     }
 
+    /**
+     * 创建新的工作区
+     */
     private ContextMenu createArchiveMenu() {
         // 新增工作区
         MenuItem newArchive = new MenuItem(MessageUtil.get("newArchive"));
@@ -260,7 +261,7 @@ public class WindonlyController implements Initializable, Serializable {
         // 修改工作区名称
         MenuItem renameArchive = new MenuItem(MessageUtil.get("renameArchive"));
         renameArchive.setOnAction(actionEvent -> {
-            new InputAlert(MessageUtil.get("renameArchive")) {
+            new InputAlert(MessageUtil.get("renameArchive"), Archive.getCurrentArchive()) {
                 @Override
                 public void input(String text) {
                     if (!text.isEmpty()) {
@@ -278,10 +279,11 @@ public class WindonlyController implements Initializable, Serializable {
         MenuItem delArchive = new MenuItem(MessageUtil.get("delArchive"));
         delArchive.setOnAction(actionEvent -> {
             if (checkAccess()) {
-                new ConfirmAlert(MessageUtil.get("delArchive") + " - " + Archive.getCurrentArchive()) {
+                String archive = Archive.getCurrentArchive();
+                new ConfirmAlert(MessageUtil.get("delArchive") + " - " + archive) {
                     @Override
                     public void confirm() {
-                        Archive.delArchive(Archive.getCurrentArchive());
+                        Archive.delArchive(archive);
                         refreshArchiveBox();
                         // 切换到回当前分区
                         selectArchive(Archive.allArchives().get(0));
@@ -418,35 +420,51 @@ public class WindonlyController implements Initializable, Serializable {
                         });
                         break;
                     case Message.What.COPY: {
-                        ProjectItem focusedItem = getSelectedItem();
-                        if (focusedItem != null) {
-                            ClipboardUtil.copyToSystemClipboard(focusedItem.getSource());
+                        ProjectItem item = getSelectedItem();
+                        if (item != null) {
+                            ClipboardUtil.copyToSystemClipboard(item.getSource());
                         }
                     }
                     break;
                     case Message.What.DELETE: {
-                        ProjectItem focusedItem = getSelectedItem();
+                        ProjectItem item = getSelectedItem();
                         Platform.runLater(() -> {
-                            removeItem(focusedItem, true);
+                            removeItem(item, true);
                             save();
                         });
                     }
                     break;
                     case Message.What.EDIT: {
-                        ProjectItem focusedItem = getSelectedItem();
-                        if (focusedItem != null) {
+                        ProjectItem item = getSelectedItem();
+                        if (item != null) {
                             Platform.runLater(() -> {
-                                new EditPreviewer(focusedItem).show();
+                                new EditPreviewer(item).show();
                             });
                         }
                     }
                     break;
                     case Message.What.SET_TO_TOP: {
-                        ProjectItem focusedItem = getSelectedItem();
+                        ProjectItem item = getSelectedItem();
                         Platform.runLater(() -> {
-                            topItem(focusedItem, true);
+                            topItem(item, true);
                             save();
                         });
+                    }
+                    break;
+                    case Message.What.OPEN_WITH_SYSTEM: {
+                        ProjectItem item = getSelectedItem();
+                        File file = getFileFromProjectItem(item);
+                        if (file != null) {
+                            SystemExecUtil.openFileByExplorer(file.getAbsolutePath());
+                        }
+                    }
+                    break;
+                    case Message.What.OPEN_WITH_EXPLORE: {
+                        ProjectItem item = getSelectedItem();
+                        File file = getFileFromProjectItem(item);
+                        if (file != null) {
+                            SystemExecUtil.selectFileByExplorer(file.getAbsolutePath());
+                        }
                     }
                     break;
                     case Message.What.WINDOW_PIN:
@@ -469,6 +487,21 @@ public class WindonlyController implements Initializable, Serializable {
                 }
             }
         };
+    }
+
+    private File getFileFromProjectItem(ProjectItem item) {
+        if (item == null) {
+            return null;
+        }
+        if (item.getType() == ProjectItem.Type.FILE) {
+            return (File) item.getSource();
+        } else {
+            List<File> list = (List<File>) item.getSource();
+            if (list.size() == 1) {
+                return list.get(0);
+            }
+        }
+        return null;
     }
 
     private ProjectItem selectProjectItem(Object o) {
@@ -535,7 +568,7 @@ public class WindonlyController implements Initializable, Serializable {
      *
      * @param o 数据对象
      */
-    private void handleDragItem(Object o) {
+    private void requestAddItem(Object o) {
         // 去除重复添加
         List<ProjectItem> all = projectItemManager.getAll();
         if (!all.isEmpty() && all.stream().anyMatch(projectItem -> projectItem.sourceEquals(o))) {
@@ -623,7 +656,7 @@ public class WindonlyController implements Initializable, Serializable {
         }
 
         protected void handleDragItem(Object o) {
-            WindonlyController.this.handleDragItem(o);
+            WindonlyController.this.requestAddItem(o);
         }
     }
 

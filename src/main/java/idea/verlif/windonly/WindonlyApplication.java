@@ -59,7 +59,7 @@ public class WindonlyApplication extends Application {
                         break;
                     case Message.What.WINDOW_SLIDE: {
                         if (WindonlyConfig.getInstance().isSlide()) {
-                            double screenWidth = ScreenUtil.getScreenSize()[0];
+                            double screenWidth = ScreenUtil.getScreenSize(mainStage)[0];
                             double thisWidth = mainStage.getWidth();
                             // 右侧则贴近右边框
                             left = !(mainStage.getX() + thisWidth / 2 > screenWidth / 2);
@@ -111,19 +111,19 @@ public class WindonlyApplication extends Application {
     }
 
     private static void slideLeft() {
-        mainStage.setX(-8);
+        mainStage.setX(-8 + ScreenUtil.getNowScreen(mainStage).getBounds().getMinX());
     }
 
     private static void hideLeft() {
-        mainStage.setX(10 - mainStage.getWidth());
+        mainStage.setX(10 + ScreenUtil.getNowScreen(mainStage).getBounds().getMinX() - mainStage.getWidth());
     }
 
     private static void slideRight() {
-        mainStage.setX(ScreenUtil.getScreenSize()[0] - mainStage.getWidth() + 8);
+        mainStage.setX(ScreenUtil.getNowScreen(mainStage).getBounds().getMaxX() - mainStage.getWidth() + 8);
     }
 
     private static void hideRight() {
-        mainStage.setX(ScreenUtil.getScreenSize()[0] - 10);
+        mainStage.setX(ScreenUtil.getNowScreen(mainStage).getBounds().getMaxX() - 10);
     }
 
     public static Stage getMainStage() {

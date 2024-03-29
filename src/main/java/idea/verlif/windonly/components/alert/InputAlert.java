@@ -20,8 +20,13 @@ public abstract class InputAlert {
     private final TextField inputField;
 
     public InputAlert(String title) {
+        this(title, "");
+    }
+
+    public InputAlert(String title, String placeholder) {
         alert = new Alert(Alert.AlertType.INFORMATION);
         inputField = new TextField();
+        inputField.setText(placeholder);
         alert.getDialogPane().setContent(createInput());
         alert.setResizable(false);
         alert.setHeaderText(null);

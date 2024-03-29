@@ -37,6 +37,14 @@ public class Message implements Serializable {
          */
         int EDIT = 1003;
         /**
+         * 从系统打开
+         */
+        int OPEN_WITH_SYSTEM = 1004;
+        /**
+         * 打开文件位置
+         */
+        int OPEN_WITH_EXPLORE = 1005;
+        /**
          * 删除远程数据列表聚焦项
          */
         int DELETE_REMOTE = 1012;

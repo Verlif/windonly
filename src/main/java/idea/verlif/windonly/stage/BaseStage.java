@@ -1,6 +1,7 @@
 package idea.verlif.windonly.stage;
 
 import idea.verlif.windonly.WindonlyException;
+import idea.verlif.windonly.config.WindonlyConfig;
 import idea.verlif.windonly.utils.MessageUtil;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -31,6 +32,10 @@ public class BaseStage extends Stage {
         borderPane = new BorderPane();
         rootPane.setCenter(borderPane);
 
+        // 初始化前台
+        if (WindonlyConfig.getInstance().isAlwaysShow()) {
+            pinTop();
+        }
         // 置顶
         rootPane.setOnMousePressed(mouseEvent -> {
             // 窗口置顶快捷键
