@@ -20,7 +20,7 @@ public class BaseStage extends Stage {
         BorderPane rootPane = new BorderPane();
         Scene scene = new Scene(rootPane);
         setScene(scene);
-        setTitle("Windonly");
+        setTitle(MessageUtil.get("app"));
         try (InputStream iconStream = getClass().getResourceAsStream("/images/icon.png")) {
             if (iconStream != null) {
                 getIcons().add(new Image(iconStream));

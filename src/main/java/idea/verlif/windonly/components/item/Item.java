@@ -8,7 +8,11 @@ public interface Item<T> extends Serializable {
 
     T getSource();
 
+    default void setSource(T t) {}
+
     boolean match(String key);
 
     boolean sourceEquals(T t);
+
+    void refresh();
 }

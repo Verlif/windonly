@@ -20,6 +20,7 @@ public class ProjectItem extends HBox implements Item<Object> {
     private final Item<Object> item;
     private final Node node;
     private final Type type;
+    private final Item<Node> operateArea;
 
     public ProjectItem(Node node) {
         this.node = node;
@@ -29,10 +30,11 @@ public class ProjectItem extends HBox implements Item<Object> {
         Object source = this.item.getSource();
         type = setType(source);
 
+        operateArea = getOperateNode();
         init();
     }
 
-    protected Node getOperateNode() {
+    protected Item<Node> getOperateNode() {
         return new OperateArea();
     }
 
@@ -42,7 +44,7 @@ public class ProjectItem extends HBox implements Item<Object> {
         setPadding(new Insets(4));
 
         ObservableList<Node> children = getChildren();
-        children.add(getOperateNode());
+        children.add((Node) operateArea);
         children.add(node);
         // 添加拖拽处理器
         setOnDragDetected(event -> {
@@ -63,6 +65,11 @@ public class ProjectItem extends HBox implements Item<Object> {
         setOnDragExited(event -> new Message(Message.What.WINDOW_NOT_FOCUS).send());
     }
 
+    public void refresh() {
+        operateArea.refresh();
+        item.refresh();
+    }
+
     private Type setType(Object source) {
         if (source instanceof List) {
             return Type.FILES;
@@ -80,6 +87,10 @@ public class ProjectItem extends HBox implements Item<Object> {
         return item.getSource();
     }
 
+    public Item<Object> getItem() {
+        return item;
+    }
+
     @Override
     public boolean match(String key) {
         return item.match(key);
@@ -92,6 +103,11 @@ public class ProjectItem extends HBox implements Item<Object> {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public String toString() {
+        return item.getSource().toString();
     }
 
     public Type getType() {

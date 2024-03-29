@@ -1,12 +1,14 @@
 module idea.verlif.windonly {
     requires javafx.controls;
     requires javafx.fxml;
+    requires javafx.swing;
 
     requires org.controlsfx.controls;
     requires idea.verlif.easy.dict;
     requires idea.verlif.easy.file;
     requires idea.verlif.socketpoint;
     requires com.fasterxml.jackson.databind;
+    requires java.desktop;
 
     opens idea.verlif.windonly to javafx.fxml;
     exports idea.verlif.windonly;

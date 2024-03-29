@@ -7,7 +7,7 @@ import javafx.scene.text.Font;
 
 public class TextItem extends Label implements Item<String> {
 
-    private final String text;
+    private String text;
 
     public TextItem(String s) {
         super(s);
@@ -16,7 +16,6 @@ public class TextItem extends Label implements Item<String> {
 
     @Override
     public void init() {
-        setFont(Font.font(WindonlyConfig.getInstance().getFontSize()));
         setMaxHeight(200);
         setMaxWidth(3000);
         // 自动换行
@@ -27,11 +26,17 @@ public class TextItem extends Label implements Item<String> {
                 new TextPreviewer(text).show();
             }
         });
+        refresh();
     }
 
     @Override
     public String getSource() {
         return text;
+    }
+
+    @Override
+    public void setSource(String s) {
+        this.text = s;
     }
 
     @Override
@@ -42,5 +47,10 @@ public class TextItem extends Label implements Item<String> {
     @Override
     public boolean sourceEquals(String s) {
         return text.equals(s);
+    }
+
+    @Override
+    public void refresh() {
+        setFont(Font.font(WindonlyConfig.getInstance().getCalcFontSize()));
     }
 }

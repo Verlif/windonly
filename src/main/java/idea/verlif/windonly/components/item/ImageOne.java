@@ -15,25 +15,16 @@ import javafx.scene.text.Font;
 public class ImageOne extends BorderPane implements Item<Image> {
 
     private final Image image;
-    private final double height;
 
     public ImageOne(Image image) {
         this.image = image;
-        this.height = WindonlyConfig.getInstance().getFontSize() * 8;
     }
 
     @Override
     public void init() {
         // 设置宽高样式
-        setPrefWidth(height);
-        setPrefHeight(height);
         setPadding(ItemInsets.INSETS);
 
-        // 设置文件图标与提示文本
-        setCenter(new FileIconImageView(image));
-        Node nameNode = createFilenameNode(image);
-        setBottom(nameNode);
-        setAlignment(nameNode, Pos.CENTER);
 
         // 设置双击打开
         setOnMouseClicked(mouseEvent -> {
@@ -41,12 +32,13 @@ public class ImageOne extends BorderPane implements Item<Image> {
                 SystemExecUtil.openFileByExplorer(image.getUrl());
             }
         });
+        refresh();
     }
 
     private Node createFilenameNode(Image image) {
         Label label = new Label(image.getUrl());
         label.setAlignment(Pos.CENTER);
-        label.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
+        label.setFont(new Font(WindonlyConfig.getInstance().getCalcFontSize()));
         // 设置提示
         label.setTooltip(new Tooltip(image.getUrl()));
         return label;
@@ -65,6 +57,19 @@ public class ImageOne extends BorderPane implements Item<Image> {
     @Override
     public boolean sourceEquals(Image image) {
         return this.image.equals(image);
+    }
+
+    @Override
+    public void refresh() {
+        // 设置字体
+        double height = WindonlyConfig.getInstance().getCalcFontSize() * 8;
+        setPrefWidth(height);
+        setPrefHeight(height);
+        // 设置文件图标与提示文本
+        setCenter(new FileIconImageView(image));
+        Node nameNode = createFilenameNode(image);
+        setBottom(nameNode);
+        setAlignment(nameNode, Pos.CENTER);
     }
 
     /**

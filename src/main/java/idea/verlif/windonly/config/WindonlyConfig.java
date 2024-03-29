@@ -8,6 +8,8 @@ import idea.verlif.windonly.data.Archive;
 import idea.verlif.windonly.data.Savable;
 import idea.verlif.windonly.manage.inner.Message;
 
+import java.math.BigDecimal;
+
 public class WindonlyConfig implements Savable<String> {
 
     private static final WindonlyConfig WINDONLY_CONFIG = new WindonlyConfig();
@@ -19,13 +21,25 @@ public class WindonlyConfig implements Savable<String> {
         return WINDONLY_CONFIG;
     }
 
-    // 显示字体大小
+    /**
+     * 显示字体大小
+     */
     private double fontSize = 16;
-    // 图片大小
+    /**
+     * 按钮大小
+     */
+    private double buttonSize = 16;
+    /**
+     * 图片大小
+     */
     private double imageSize = fontSize * 8;
-    // 放大倍率
+    /**
+     * 放大倍率
+     */
     private double magnification = 1.0;
-    // 是否置顶窗口
+    /**
+     * 是否置顶窗口
+     */
     private boolean alwaysShow = true;
     /**
      * 数据锁定，不允许数据更改，不允许删除工作区
@@ -41,8 +55,12 @@ public class WindonlyConfig implements Savable<String> {
         archive.save(WindonlyConfig.this);
     }
 
+    public double getCalcFontSize() {
+        return fontSize * getMagnification();
+    }
+
     public double getFontSize() {
-        return fontSize * magnification;
+        return fontSize;
     }
 
     public void setFontSize(double fontSize) {
@@ -52,6 +70,19 @@ public class WindonlyConfig implements Savable<String> {
 
     private void initFontSize(double fontSize) {
         this.fontSize = fontSize;
+    }
+
+    public double getButtonSize() {
+        return buttonSize;
+    }
+
+    public void setButtonSize(double buttonSize) {
+        initButtonSize(buttonSize);
+        saveToFile();
+    }
+
+    public void initButtonSize(double buttonSize) {
+        this.buttonSize = buttonSize;
     }
 
     public double getImageSize() {
@@ -78,6 +109,14 @@ public class WindonlyConfig implements Savable<String> {
 
     private void initMagnification(double magnification) {
         this.magnification = magnification;
+    }
+
+    public void changeMagnification(String magnification) {
+        this.magnification = BigDecimal.valueOf(this.magnification).add(new BigDecimal(magnification)).doubleValue();
+        if (this.magnification < 0.2) {
+            this.magnification = 0.2;
+        }
+        saveToFile();
     }
 
     public boolean isAlwaysShow() {
@@ -143,7 +182,7 @@ public class WindonlyConfig implements Savable<String> {
                     initAlwaysShow(windonlyConfig.get("alwaysShow").asBoolean());
                 }
                 if (windonlyConfig.has("magnification")) {
-                    initMagnification(windonlyConfig.get("magnification").asDouble());
+                    initMagnification(windonlyConfig.get("magnification").asInt());
                 }
                 if (windonlyConfig.has("fontSize")) {
                     initFontSize(windonlyConfig.get("fontSize").asDouble());

@@ -1,14 +1,17 @@
 package idea.verlif.windonly.components;
 
+import idea.verlif.windonly.components.item.Item;
 import idea.verlif.windonly.config.WindonlyConfig;
 import idea.verlif.windonly.manage.inner.Message;
 import idea.verlif.windonly.utils.MessageUtil;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
-public class RemoteOperateArea extends VBox {
+public class RemoteOperateArea extends VBox implements Item<Node> {
 
     private static final String BUTTON_STYLE = "-fx-background-color: #bbebff;-fx-background-radius: 4";
 
@@ -17,15 +20,36 @@ public class RemoteOperateArea extends VBox {
     }
 
     public void init() {
-        // 设置右边分割线
-        setPadding(new Insets(2, 8 * WindonlyConfig.getInstance().getMagnification(), 2, 0));
         // 顶部居中布局
         setAlignment(Pos.TOP_CENTER);
         setSpacing(4);
+        refresh();
+    }
+
+    @Override
+    public Node getSource() {
+        return this;
+    }
+
+    @Override
+    public boolean match(String key) {
+        return false;
+    }
+
+    @Override
+    public boolean sourceEquals(Node node) {
+        return false;
+    }
+
+    @Override
+    public void refresh() {
+        // 设置右边分割线
+        setPadding(new Insets(2, 8 * WindonlyConfig.getInstance().getMagnification(), 2, 0));
+        ObservableList<Node> children = getChildren();
+        children.clear();
         // 删除
         Label delete = new DeleteButton();
-
-        getChildren().addAll(delete);
+        children.addAll(delete);
     }
 
     private static final class DeleteButton extends Label {

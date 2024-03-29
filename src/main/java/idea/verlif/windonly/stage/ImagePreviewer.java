@@ -46,7 +46,7 @@ public class ImagePreviewer extends BaseStage {
         });
         // 设置鼠标滚轮滚动缩放
         imageView.setOnScroll(scrollEvent -> {
-            double temp = magnification + scrollEvent.getDeltaY() / 20 * 0.1;
+            double temp = magnification + scrollEvent.getDeltaY() / 2;
             magnification = Math.max(temp, 0.1);
             ScaleTransition st = new ScaleTransition(Duration.millis(500), imageView);
             st.setToX(magnification);

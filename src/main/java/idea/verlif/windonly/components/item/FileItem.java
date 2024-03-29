@@ -29,7 +29,7 @@ public class FileItem extends HBox implements Item<List<File>> {
     public void init() {
         setNodeOrientation(NodeOrientation.LEFT_TO_RIGHT);
         setHeight(WindonlyConfig.getInstance().getImageSize() + 10);
-        setSpacing(WindonlyConfig.getInstance().getFontSize() / 2);
+        setSpacing(WindonlyConfig.getInstance().getCalcFontSize() / 2);
         // 添加文件项目
         for (FileOne file : files) {
             file.init();
@@ -58,5 +58,12 @@ public class FileItem extends HBox implements Item<List<File>> {
             return false;
         }
         return files.stream().allMatch(file -> Arrays.stream(this.files).anyMatch(fileOne -> fileOne.getFile().equals(file)));
+    }
+
+    @Override
+    public void refresh() {
+        for (FileOne file : files) {
+            file.refresh();
+        }
     }
 }

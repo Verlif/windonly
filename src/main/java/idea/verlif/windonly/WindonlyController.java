@@ -21,10 +21,13 @@ import idea.verlif.windonly.manage.inner.Message;
 import idea.verlif.windonly.remote.RemoteDataManager;
 import idea.verlif.windonly.remote.RemoteItemData;
 import idea.verlif.windonly.remote.RemoteListDisplay;
+import idea.verlif.windonly.stage.EditPreviewer;
 import idea.verlif.windonly.utils.ClipboardUtil;
 import idea.verlif.windonly.utils.IpUtil;
 import idea.verlif.windonly.utils.MessageUtil;
 import javafx.application.Platform;
+import javafx.collections.ObservableList;
+import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -35,7 +38,9 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.robot.Robot;
 import javafx.scene.text.Font;
 
 import java.io.File;
@@ -109,7 +114,24 @@ public class WindonlyController implements Initializable, Serializable {
         list.setFocusTraversable(false);
         // 设置数据展示区拖入事件
         list.setOnDragEntered(new ListOnDrag());
-        list.setContextMenu(new MainContextMenu());
+        // 右键菜单
+        MainContextMenu<Event> contextMenu = new MainContextMenu<>() {
+            @Override
+            public void handle(Event event) {
+                ProjectItem selectedItem = getSelectedItem();
+                getEdit().setDisable(selectedItem == null
+                        || selectedItem.getType() != ProjectItem.Type.TEXT);
+            }
+        };
+        list.setContextMenu(contextMenu);
+        list.setOnContextMenuRequested(contextMenu);
+        list.setOnMouseClicked(event -> {
+            // 鼠标中键复制
+            if (event.getButton() == MouseButton.MIDDLE) {
+                new Robot().mouseClick(MouseButton.PRIMARY);
+                new Message(Message.What.COPY).send();
+            }
+        });
         // 设置远端面板右键按钮
         remoteList.setContextMenu(new RemoteContextMenu());
         // 设置pin
@@ -136,29 +158,29 @@ public class WindonlyController implements Initializable, Serializable {
         });
         // 增加快捷方式
         archiveBox.setContextMenu(createArchiveMenu());
-        // 初始化工作区存档
-        refreshArchiveBox();
         // 注册监听
         registerHandler();
-        // 切换到回当前分区
-        selectArchive(Archive.getCurrentArchive());
+        refreshList();
         switchLock(WindonlyConfig.getInstance().isLock());
         switchPin(WindonlyConfig.getInstance().isAlwaysShow());
         switchSlide(WindonlyConfig.getInstance().isSlide());
 
         // 初始化远程列表
         initRemoteList();
+        resize();
+    }
+
+    private void resize() {
         // 设置样式
-        input.setPrefHeight(WindonlyConfig.getInstance().getFontSize() + 8);
-        input.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
-        pinView.setFitHeight(WindonlyConfig.getInstance().getFontSize());
-        pinView.setFitWidth(WindonlyConfig.getInstance().getFontSize());
+        input.setFont(new Font(WindonlyConfig.getInstance().getButtonSize()));
+        pinView.setFitHeight(WindonlyConfig.getInstance().getButtonSize());
+        pinView.setFitWidth(WindonlyConfig.getInstance().getButtonSize());
         lockView.setFitHeight(pinView.getFitHeight());
         lockView.setFitWidth(pinView.getFitWidth());
         slideView.setFitHeight(pinView.getFitHeight());
         slideView.setFitWidth(pinView.getFitWidth());
         archiveBox.setPrefHeight(input.getPrefHeight());
-        archiveBox.setPrefWidth(100 * WindonlyConfig.getInstance().getMagnification());
+        archiveBox.setPrefWidth(100);
     }
 
     private void refreshArchiveBox() {
@@ -168,6 +190,7 @@ public class WindonlyController implements Initializable, Serializable {
 
     private void selectArchive(String archive) {
         archiveBox.setValue(archive);
+        Archive.setCurrentArchive(archive);
     }
 
     /**
@@ -277,9 +300,16 @@ public class WindonlyController implements Initializable, Serializable {
         return new ContextMenu(newArchive, renameArchive, delArchive, refreshArchive);
     }
 
+    private void refreshList() {
+        String currentArchive = Archive.getCurrentArchive();
+        refreshArchiveBox();
+        // 切换到回当前分区
+        selectArchive(currentArchive);
+    }
+
     private void showTip(String text) {
         Label tip = new Label(text);
-        tip.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
+        tip.setFont(new Font(WindonlyConfig.getInstance().getCalcFontSize()));
         tip.setOnMouseClicked(mouseEvent -> closeTip());
         BorderPane pane = new BorderPane();
         pane.setCenter(tip);
@@ -365,6 +395,15 @@ public class WindonlyController implements Initializable, Serializable {
         input.setText("");
     }
 
+    private ProjectItem getSelectedItem() {
+        ObservableList<ProjectItem> selectedItems = list.getSelectionModel().getSelectedItems();
+        if (!selectedItems.isEmpty()) {
+            return selectedItems.get(0);
+        } else {
+            return null;
+        }
+    }
+
     /**
      * 注册需要处理的信息
      */
@@ -373,21 +412,37 @@ public class WindonlyController implements Initializable, Serializable {
             @Override
             public void handlerMessage(Message message) {
                 switch (message.what) {
+                    case Message.What.DATA_REFRESH:
+                        Platform.runLater(() -> {
+                            refreshList();
+                        });
+                        break;
                     case Message.What.COPY: {
-                        ProjectItem focusedItem = list.getFocusModel().getFocusedItem();
-                        ClipboardUtil.copyToSystemClipboard(focusedItem.getSource());
+                        ProjectItem focusedItem = getSelectedItem();
+                        if (focusedItem != null) {
+                            ClipboardUtil.copyToSystemClipboard(focusedItem.getSource());
+                        }
                     }
                     break;
                     case Message.What.DELETE: {
-                        ProjectItem focusedItem = list.getFocusModel().getFocusedItem();
+                        ProjectItem focusedItem = getSelectedItem();
                         Platform.runLater(() -> {
                             removeItem(focusedItem, true);
                             save();
                         });
                     }
                     break;
+                    case Message.What.EDIT: {
+                        ProjectItem focusedItem = getSelectedItem();
+                        if (focusedItem != null) {
+                            Platform.runLater(() -> {
+                                new EditPreviewer(focusedItem).show();
+                            });
+                        }
+                    }
+                    break;
                     case Message.What.SET_TO_TOP: {
-                        ProjectItem focusedItem = list.getFocusModel().getFocusedItem();
+                        ProjectItem focusedItem = getSelectedItem();
                         Platform.runLater(() -> {
                             topItem(focusedItem, true);
                             save();
