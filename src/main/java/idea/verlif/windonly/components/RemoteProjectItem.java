@@ -1,5 +1,7 @@
 package idea.verlif.windonly.components;
 
+import idea.verlif.windonly.components.item.Item;
+import idea.verlif.windonly.manage.inner.Message;
 import javafx.scene.Node;
 
 public class RemoteProjectItem extends ProjectItem {
@@ -12,7 +14,17 @@ public class RemoteProjectItem extends ProjectItem {
     }
 
     @Override
-    protected Node getOperateNode() {
+    public void init() {
+        super.init();
+        setOnMouseClicked(event -> {
+            if (event.isMiddleButtonDown()) {
+                new Message(Message.What.COPY_REMOTE).send();
+            }
+        });
+    }
+
+    @Override
+    protected Item<Node> getOperateNode() {
         return new RemoteOperateArea();
     }
 

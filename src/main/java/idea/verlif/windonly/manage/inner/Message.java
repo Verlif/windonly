@@ -11,6 +11,10 @@ public class Message implements Serializable {
          * 保存存档
          */
         int ARCHIVE_SAVE = 0;
+        /**
+         * 刷新数据列表
+         */
+        int DATA_REFRESH = 1;
 
         /**
          * 复制数据列表聚焦项
@@ -29,6 +33,10 @@ public class Message implements Serializable {
          */
         int DELETE = 1002;
         /**
+         * 编辑数据列表聚焦项
+         */
+        int EDIT = 1003;
+        /**
          * 删除远程数据列表聚焦项
          */
         int DELETE_REMOTE = 1012;
@@ -40,6 +48,11 @@ public class Message implements Serializable {
          * 同步远程数据
          */
         int SYNC_REMOTE = 1015;
+
+        /**
+         * 显示tip
+         */
+        int TIP = 1099;
 
         /**
          * 置顶应用窗口
@@ -86,6 +99,10 @@ public class Message implements Serializable {
          * 锁定当前工作区
          */
         int ARCHIVE_LOCK = 3002;
+        /**
+         * 缩放设置更新
+         */
+        int SETTING_MAGNIFICATION = 4001;
     }
 
     /**

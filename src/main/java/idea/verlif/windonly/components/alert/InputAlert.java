@@ -34,8 +34,8 @@ public abstract class InputAlert {
     public abstract void input(String text);
 
     private Node createInput() {
-        inputField.setPrefHeight(WindonlyConfig.getInstance().getFontSize() + 8);
-        inputField.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
+        inputField.setPrefHeight(WindonlyConfig.getInstance().getCalcFontSize() + 8);
+        inputField.setFont(new Font(WindonlyConfig.getInstance().getCalcFontSize()));
         inputField.setOnKeyPressed(keyEvent -> {
             if (keyEvent.getCode() == KeyCode.ENTER && !inputField.getText().isBlank()) {
                 input(inputField.getText());
@@ -43,7 +43,7 @@ public abstract class InputAlert {
         });
         BorderPane pane = new BorderPane();
         pane.setPadding(new Insets(5));
-        pane.setPrefHeight(WindonlyConfig.getInstance().getFontSize() + 8);
+        pane.setPrefHeight(WindonlyConfig.getInstance().getCalcFontSize() + 8);
         pane.setCenter(inputField);
         return pane;
     }

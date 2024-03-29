@@ -1,26 +1,57 @@
 package idea.verlif.windonly.stage;
 
+import idea.verlif.windonly.components.ProjectItem;
+import idea.verlif.windonly.components.item.Item;
 import idea.verlif.windonly.config.WindonlyConfig;
+import idea.verlif.windonly.manage.inner.Message;
 import idea.verlif.windonly.utils.MessageUtil;
 import idea.verlif.windonly.utils.ScreenUtil;
 import javafx.geometry.Insets;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
-import javafx.scene.input.MouseButton;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.text.Font;
+import javafx.stage.Modality;
 
-public class TextPreviewer extends BaseStage {
+public class EditPreviewer extends BaseStage {
 
     private final TextArea textArea;
+    private final ProjectItem item;
+    /**
+     * 是否已更改
+     */
+    private boolean changed = false;
 
-    public TextPreviewer(String text) {
+    public EditPreviewer(ProjectItem item) {
         super();
-
-        this.textArea = createTextArea(text);
-        getBorderPane().setCenter(textArea);
-        initSize();
+        this.item = item;
+        setTitle(MessageUtil.get("edit"));
+        if (item.getType() == ProjectItem.Type.TEXT) {
+            initModality(Modality.APPLICATION_MODAL);
+            // 初始化文本
+            String text = (String) item.getSource();
+            // 创建文本域
+            this.textArea = createEditArea(text);
+            // 设置文本域
+            getBorderPane().setCenter(textArea);
+            // 初始化尺寸
+            initSize();
+            // 初始化前台
+            if (WindonlyConfig.getInstance().isAlwaysShow()) {
+                pinTop();
+            }
+            // 关闭时有更新就触发列表更新
+            setOnHidden(windowEvent -> {
+                if (changed) {
+                    new Message(Message.What.DATA_REFRESH).send();
+                }
+            });
+        } else {
+            this.textArea = null;
+            close();
+        }
     }
 
     private void initSize() {
@@ -35,13 +66,18 @@ public class TextPreviewer extends BaseStage {
         borderPane.setPrefHeight(height);
     }
 
-    private TextArea createTextArea(String text) {
+    private TextArea createEditArea(String text) {
         TextArea textArea = new TextArea(text);
         textArea.setFont(new Font(WindonlyConfig.getInstance().getCalcFontSize()));
-        textArea.setEditable(false);
-        // 复制
-        MenuItem copy = new MenuItem(MessageUtil.get("copy"));
-        copy.setOnAction(actionEvent -> textArea.copy());
+        textArea.setEditable(true);
+        textArea.textProperty().addListener((observableValue, s, t1) -> {
+            EditPreviewer.this.setTitle(MessageUtil.get("edit") + "*");
+        });
+        textArea.setOnKeyPressed(keyEvent -> {
+            if (keyEvent.isControlDown() && keyEvent.getCode() == KeyCode.S) {
+                save();
+            }
+        });
         // 全选
         MenuItem selectAll = new MenuItem(MessageUtil.get("selectAll"));
         selectAll.setOnAction(actionEvent -> textArea.selectAll());
@@ -57,10 +93,12 @@ public class TextPreviewer extends BaseStage {
                 pinTop();
             }
         });
+        // 保存
+        MenuItem save = new MenuItem(MessageUtil.get("save"));
+        save.setOnAction(actionEvent -> save());
         // 添加菜单
-        textArea.setContextMenu(new ContextMenu(copy, selectAll, lineWrap, pinTop));
+        textArea.setContextMenu(new ContextMenu(save, selectAll, lineWrap, pinTop));
         textArea.setOnContextMenuRequested(contextMenuEvent -> {
-            copy.setDisable(textArea.getSelectedText().isEmpty());
             lineWrap.setText((textArea.isWrapText() ? "ON -" : "OFF-") + MessageUtil.get("autoLineWrap"));
             pinTop.setText((isAlwaysOnTop() ? "ON -" : "OFF-") + MessageUtil.get("setToTop"));
         });
@@ -77,4 +115,10 @@ public class TextPreviewer extends BaseStage {
         return textArea;
     }
 
+    private void save() {
+        this.changed = true;
+        Item<Object> objectItem = item.getItem();
+        objectItem.setSource(textArea.getText());
+        EditPreviewer.this.setTitle(MessageUtil.get("edit"));
+    }
 }

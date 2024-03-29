@@ -109,7 +109,6 @@ public class Archive implements Serializable {
 
     public static void setCurrentArchive(String archive) {
         SETTINGS.setCurrentArchive(archive);
-
     }
 
     public static void delArchive(String archive) {
