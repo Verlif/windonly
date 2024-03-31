@@ -6,6 +6,7 @@ import idea.verlif.windonly.stage.ImagePreviewer;
 import idea.verlif.windonly.stage.TextPreviewer;
 import idea.verlif.windonly.utils.FileTypeUtil;
 import idea.verlif.windonly.utils.SystemExecUtil;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -13,17 +14,15 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.text.Font;
-import javafx.embed.swing.SwingFXUtils;
 
+import javax.swing.*;
+import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.InputStream;
-import javax.swing.*;
-import javax.swing.filechooser.FileSystemView;
 
 public class FileOne extends BorderPane implements Item<File> {
 
@@ -73,7 +72,7 @@ public class FileOne extends BorderPane implements Item<File> {
     private Node createFilenameNode(File file) {
         Label label = new Label(file.getName());
         label.setAlignment(Pos.CENTER);
-        label.setFont(new Font(WindonlyConfig.getInstance().getCalcFontSize() * 0.8));
+        label.setFont(new Font(WindonlyConfig.getInstance().getFontSize() * 0.8));
         // 设置提示
         label.setTooltip(new Tooltip(file.getAbsolutePath()));
         return label;
@@ -118,8 +117,8 @@ public class FileOne extends BorderPane implements Item<File> {
         public FileIconImageView(File file) {
             super();
             Image image = null;
-            // TODO: 过大的图片会导致浏览卡顿
-            if (FileTypeUtil.isImage(file) && file.length() < 1024 * 1024) {
+            long maxSize = WindonlyConfig.getInstance().getDisplayImageMaxSize();
+            if (FileTypeUtil.isImage(file) && (maxSize < 0 || file.length() < maxSize)) {
                 image = new Image(file.getAbsolutePath());
             }
             // 默认图片

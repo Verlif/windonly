@@ -38,6 +38,14 @@ public class WindonlyConfig implements Savable<String> {
      */
     private double magnification = 1.0;
     /**
+     * 允许显示的最大图片文件大小（单位byte）
+     */
+    private long displayImageMaxSize = 1024 * 1024;
+    /**
+     * 允许显示的最大文件数量，超出数量则只显示省略号
+     */
+    private int displayFileNumber = 10;
+    /**
      * 是否置顶窗口
      */
     private boolean alwaysShow = true;
@@ -55,12 +63,8 @@ public class WindonlyConfig implements Savable<String> {
         archive.save(WindonlyConfig.this);
     }
 
-    public double getCalcFontSize() {
-        return fontSize * getMagnification();
-    }
-
     public double getFontSize() {
-        return fontSize;
+        return fontSize * getMagnification();
     }
 
     public void setFontSize(double fontSize) {
@@ -73,7 +77,7 @@ public class WindonlyConfig implements Savable<String> {
     }
 
     public double getButtonSize() {
-        return buttonSize;
+        return buttonSize * getMagnification();
     }
 
     public void setButtonSize(double buttonSize) {
@@ -86,7 +90,7 @@ public class WindonlyConfig implements Savable<String> {
     }
 
     public double getImageSize() {
-        return imageSize;
+        return imageSize * getMagnification();
     }
 
     public void setImageSize(double imageSize) {
@@ -117,6 +121,32 @@ public class WindonlyConfig implements Savable<String> {
             this.magnification = 0.2;
         }
         saveToFile();
+    }
+
+    public long getDisplayImageMaxSize() {
+        return displayImageMaxSize;
+    }
+
+    public void setDisplayImageMaxSize(long displayImageMaxSize) {
+        initDisplayImageMaxSize(displayImageMaxSize);
+        saveToFile();
+    }
+
+    public void initDisplayImageMaxSize(long displayImageMaxSize) {
+        this.displayImageMaxSize = displayImageMaxSize;
+    }
+
+    public int getDisplayFileNumber() {
+        return displayFileNumber;
+    }
+
+    public void setDisplayFileNumber(int displayFileNumber) {
+        initDisplayFileNumber(displayFileNumber);
+        saveToFile();
+    }
+
+    public void initDisplayFileNumber(int displayFileNumber) {
+        this.displayFileNumber = displayFileNumber;
     }
 
     public boolean isAlwaysShow() {
@@ -183,6 +213,12 @@ public class WindonlyConfig implements Savable<String> {
                 }
                 if (windonlyConfig.has("magnification")) {
                     initMagnification(windonlyConfig.get("magnification").asInt());
+                }
+                if (windonlyConfig.has("displayImageMaxSize")) {
+                    initDisplayImageMaxSize(windonlyConfig.get("displayImageMaxSize").asLong());
+                }
+                if (windonlyConfig.has("displayFileNumber")) {
+                    initDisplayFileNumber(windonlyConfig.get("displayFileNumber").asInt());
                 }
                 if (windonlyConfig.has("fontSize")) {
                     initFontSize(windonlyConfig.get("fontSize").asDouble());

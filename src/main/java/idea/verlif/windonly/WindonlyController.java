@@ -311,7 +311,7 @@ public class WindonlyController implements Initializable, Serializable {
 
     private void showTip(String text) {
         Label tip = new Label(text);
-        tip.setFont(new Font(WindonlyConfig.getInstance().getCalcFontSize()));
+        tip.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
         tip.setOnMouseClicked(mouseEvent -> closeTip());
         BorderPane pane = new BorderPane();
         pane.setCenter(tip);
@@ -645,13 +645,13 @@ public class WindonlyController implements Initializable, Serializable {
             Dragboard dragboard = dragEvent.getDragboard();
             if (dragboard.hasFiles()) {
                 handleDragItem(dragboard.getFiles());
+            } else if (dragboard.hasUrl()) {
+                handleDragItem(dragboard.getUrl());
             } else if (dragboard.hasImage()) {
                 Image image = dragboard.getImage();
                 handleDragItem(image);
             } else if (dragboard.hasString()) {
                 handleDragItem(dragboard.getString());
-            } else if (dragboard.hasUrl()) {
-                handleDragItem(dragboard.getUrl());
             }
         }
 

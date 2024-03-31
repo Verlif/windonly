@@ -1,8 +1,13 @@
 package idea.verlif.windonly.components.item;
 
 import idea.verlif.windonly.config.WindonlyConfig;
+import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 
 import java.io.File;
 import java.util.Arrays;
@@ -28,12 +33,32 @@ public class FileItem extends VBox implements Item<List<File>> {
     @Override
     public void init() {
         setAlignment(Pos.CENTER_LEFT);
-        setSpacing(WindonlyConfig.getInstance().getCalcFontSize() / 2);
+        setSpacing(WindonlyConfig.getInstance().getFontSize() / 2);
+        int fileNumber = WindonlyConfig.getInstance().getDisplayFileNumber();
+        FileOne[] showList;
+        if (fileNumber > 0 && files.length > fileNumber) {
+            showList = Arrays.copyOf(files, 10);
+        } else {
+            showList = files;
+        }
         // 添加文件项目
-        for (FileOne file : files) {
+        for (FileOne file : showList) {
             file.init();
         }
-        getChildren().addAll(files);
+        ObservableList<Node> children = getChildren();
+        children.addAll(showList);
+        if (fileNumber > 0 && files.length > fileNumber) {
+            children.addAll(createMoreTip(fileNumber));
+        }
+    }
+
+    private Node createMoreTip(int standard) {
+        Label label = new Label("......");
+        label.setAlignment(Pos.CENTER);
+        label.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
+        // 设置提示
+        label.setTooltip(new Tooltip(files.length - standard + "+"));
+        return label;
     }
 
     @Override
