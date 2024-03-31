@@ -7,7 +7,6 @@ import javafx.geometry.Insets;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
-import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.text.Font;
 
@@ -37,7 +36,7 @@ public class TextPreviewer extends BaseStage {
 
     private TextArea createTextArea(String text) {
         TextArea textArea = new TextArea(text);
-        textArea.setFont(new Font(WindonlyConfig.getInstance().getCalcFontSize()));
+        textArea.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
         textArea.setEditable(false);
         // 复制
         MenuItem copy = new MenuItem(MessageUtil.get("copy"));

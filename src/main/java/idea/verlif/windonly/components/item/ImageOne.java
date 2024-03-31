@@ -36,7 +36,7 @@ public class ImageOne extends BorderPane implements Item<Image> {
     private Node createFilenameNode(Image image) {
         Label label = new Label(image.getUrl());
         label.setAlignment(Pos.CENTER);
-        label.setFont(new Font(WindonlyConfig.getInstance().getCalcFontSize()));
+        label.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
         // 设置提示
         label.setTooltip(new Tooltip(image.getUrl()));
         return label;
@@ -54,13 +54,13 @@ public class ImageOne extends BorderPane implements Item<Image> {
 
     @Override
     public boolean sourceEquals(Image image) {
-        return this.image.equals(image);
+        return this.image == image || this.image.getUrl().equals(image.getUrl());
     }
 
     @Override
     public void refresh() {
         // 设置字体
-        double height = WindonlyConfig.getInstance().getCalcFontSize() * 8;
+        double height = WindonlyConfig.getInstance().getFontSize() * 8;
         setPrefWidth(height);
         setPrefHeight(height);
         // 设置文件图标与提示文本

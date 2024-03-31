@@ -1,11 +1,10 @@
 package idea.verlif.windonly.stage;
 
-import javafx.scene.image.Image;
 import idea.verlif.windonly.utils.ScreenUtil;
 import javafx.animation.ScaleTransition;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
-import javafx.stage.Modality;
 import javafx.util.Duration;
 
 public class ImagePreviewer extends BaseStage {
@@ -51,7 +50,7 @@ public class ImagePreviewer extends BaseStage {
         imageView.setOnScroll(scrollEvent -> {
             double temp = magnification + (scrollEvent.getDeltaY() > 0 ? 0.2 : -0.2);
             magnification = Math.max(temp, 0.1);
-            ScaleTransition st = new ScaleTransition(Duration.millis(500), imageView);
+            ScaleTransition st = new ScaleTransition(Duration.millis(200), imageView);
             st.setToX(magnification);
             st.setToY(magnification);
             st.play();

@@ -51,6 +51,6 @@ public class TextItem extends Label implements Item<String> {
 
     @Override
     public void refresh() {
-        setFont(Font.font(WindonlyConfig.getInstance().getCalcFontSize()));
+        setFont(Font.font(WindonlyConfig.getInstance().getFontSize()));
     }
 }

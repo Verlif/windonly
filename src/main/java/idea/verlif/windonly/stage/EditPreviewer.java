@@ -64,7 +64,7 @@ public class EditPreviewer extends BaseStage {
 
     private TextArea createEditArea(String text) {
         TextArea textArea = new TextArea(text);
-        textArea.setFont(new Font(WindonlyConfig.getInstance().getCalcFontSize()));
+        textArea.setFont(new Font(WindonlyConfig.getInstance().getFontSize()));
         textArea.setEditable(true);
         textArea.textProperty().addListener((observableValue, s, t1) -> {
             EditPreviewer.this.setTitle(MessageUtil.get("edit") + "*");
