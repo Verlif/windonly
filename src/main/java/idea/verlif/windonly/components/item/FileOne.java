@@ -9,7 +9,6 @@ import idea.verlif.windonly.utils.SystemExecUtil;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
@@ -27,6 +26,15 @@ import java.io.InputStream;
 public class FileOne extends BorderPane implements Item<File> {
 
     private final File file;
+    /**
+     * 是否是横向布局
+     */
+    private boolean horizontal = true;
+
+    /**
+     * 图片尺寸
+     */
+    private double imageSize = WindonlyConfig.getInstance().getFontSize();
 
     public FileOne(File file) {
         this.file = file;
@@ -37,14 +45,15 @@ public class FileOne extends BorderPane implements Item<File> {
         // 设置宽高样式
         setPadding(ItemInsets.INSETS);
 
+        String path = file.getAbsolutePath();
         // 设置文件点击事件
         if (FileTypeUtil.isImage(file)) {
             setOnMouseClicked(mouseEvent -> {
                 if (mouseEvent.getClickCount() > 1) {
                     if (mouseEvent.isControlDown()) {
-                        SystemExecUtil.openFileByExplorer(file.getAbsolutePath());
+                        SystemExecUtil.openFileByExplorer(path);
                     } else {
-                        new ImagePreviewer(file.getAbsolutePath()).show();
+                        new ImagePreviewer(path).show();
                     }
                 }
             });
@@ -52,7 +61,7 @@ public class FileOne extends BorderPane implements Item<File> {
             setOnMouseClicked(mouseEvent -> {
                 if (mouseEvent.getClickCount() > 1) {
                     if (mouseEvent.isControlDown()) {
-                        SystemExecUtil.openFileByExplorer(file.getAbsolutePath());
+                        SystemExecUtil.openFileByExplorer(path);
                     } else {
                         String text = FileUtil.readContentAsString(file);
                         new TextPreviewer(text).show();
@@ -62,14 +71,14 @@ public class FileOne extends BorderPane implements Item<File> {
         } else {
             setOnMouseClicked(mouseEvent -> {
                 if (mouseEvent.getClickCount() > 1) {
-                    SystemExecUtil.openFileByExplorer(file.getAbsolutePath());
+                    SystemExecUtil.openFileByExplorer(path);
                 }
             });
         }
         refresh();
     }
 
-    private Node createFilenameNode(File file) {
+    private Label createFilenameNode(File file) {
         Label label = new Label(file.getName());
         label.setAlignment(Pos.CENTER);
         label.setFont(new Font(WindonlyConfig.getInstance().getFontSize() * 0.8));
@@ -101,18 +110,42 @@ public class FileOne extends BorderPane implements Item<File> {
     public void refresh() {
         // 设置文件图标与提示文本
         FileIconImageView iconView = new FileIconImageView(file);
-        setLeft(iconView);
-        Node nameNode = createFilenameNode(file);
-        setCenter(nameNode);
-        setMargin(nameNode, new Insets(0, 0, 0, 4));
-        setAlignment(nameNode, Pos.CENTER_LEFT);
+        Label nameNode = createFilenameNode(file);
+        if (horizontal) {
+            // 横向显示
+            setLeft(iconView);
+            setCenter(nameNode);
+            setAlignment(nameNode, Pos.CENTER_LEFT);
+            setMargin(nameNode, new Insets(0, 0, 0, 8));
+        } else {
+            // 纵向显示
+            setCenter(iconView);
+            setBottom(nameNode);
+            setAlignment(nameNode, Pos.BOTTOM_CENTER);
+        }
         setAlignment(iconView, Pos.CENTER_LEFT);
+    }
+
+    public boolean isHorizontal() {
+        return horizontal;
+    }
+
+    public void setHorizontal(boolean horizontal) {
+        this.horizontal = horizontal;
+    }
+
+    public double getImageSize() {
+        return imageSize;
+    }
+
+    public void setImageSize(double imageSize) {
+        this.imageSize = imageSize;
     }
 
     /**
      * 文件图标样式
      */
-    private static final class FileIconImageView extends ImageView {
+    private final class FileIconImageView extends ImageView {
 
         public FileIconImageView(File file) {
             super();
@@ -127,7 +160,6 @@ public class FileOne extends BorderPane implements Item<File> {
             }
             if (image != null) {
                 double imageHeight = image.getHeight();
-                double imageSize = WindonlyConfig.getInstance().getImageSize();
                 if (imageHeight > imageSize) {
                     // 等比缩小
                     setFitWidth(imageSize / imageHeight * image.getWidth());

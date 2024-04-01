@@ -11,7 +11,7 @@ public class FileTypeUtil {
     private static final String[] TEXT_SUFFIX = {"txt", "xml", "yml", "yaml", "properties", "json", "csv"};
 
     public static boolean isImage(File file) {
-        String filename = file.getName().toLowerCase();
+        String filename = file.getAbsolutePath().toLowerCase();
         for (String suffix : PICTURE_SUFFIX) {
             if (filename.endsWith(suffix)) {
                 return true;

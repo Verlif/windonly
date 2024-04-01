@@ -45,6 +45,10 @@ public class Message implements Serializable {
          */
         int OPEN_WITH_EXPLORE = 1005;
         /**
+         * 从浏览器打开
+         */
+        int OPEN_WITH_BROWSE = 1006;
+        /**
          * 删除远程数据列表聚焦项
          */
         int DELETE_REMOTE = 1012;
