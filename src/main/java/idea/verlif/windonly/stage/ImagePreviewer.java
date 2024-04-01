@@ -35,6 +35,7 @@ public class ImagePreviewer extends BaseStage {
         }
         // 设置最小宽度
         setMinWidth(200);
+        setMinHeight(100);
 
         // 设置自适应
         widthProperty().addListener((observableValue, oldWidth, newWidth) -> {
@@ -47,7 +48,7 @@ public class ImagePreviewer extends BaseStage {
             setImageSize(imageView, borderPane.getWidth(), borderPane.getHeight());
         });
         // 设置鼠标滚轮滚动缩放
-        imageView.setOnScroll(scrollEvent -> {
+        borderPane.setOnScroll(scrollEvent -> {
             double temp = magnification + (scrollEvent.getDeltaY() > 0 ? 0.2 : -0.2);
             magnification = Math.max(temp, 0.1);
             ScaleTransition st = new ScaleTransition(Duration.millis(200), imageView);

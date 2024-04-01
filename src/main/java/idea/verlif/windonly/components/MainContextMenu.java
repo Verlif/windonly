@@ -2,10 +2,12 @@ package idea.verlif.windonly.components;
 
 import idea.verlif.windonly.manage.inner.Message;
 import idea.verlif.windonly.utils.MessageUtil;
+import idea.verlif.windonly.utils.StringTypeUtil;
 import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.image.Image;
 
 import java.io.File;
 import java.util.List;
@@ -15,6 +17,7 @@ public abstract class MainContextMenu<T extends Event> extends ContextMenu imple
     private MenuItem edit;
     private MenuItem openWithSystem;
     private MenuItem openWithExplore;
+    private MenuItem openWithBrowse;
 
     public MainContextMenu() {
         init();
@@ -32,8 +35,10 @@ public abstract class MainContextMenu<T extends Event> extends ContextMenu imple
         openWithSystem.setOnAction(event -> new Message(Message.What.OPEN_WITH_SYSTEM).send(event));
         openWithExplore = new MenuItem(MessageUtil.get("openWithExplore"));
         openWithExplore.setOnAction(event -> new Message(Message.What.OPEN_WITH_EXPLORE).send(event));
+        openWithBrowse = new MenuItem(MessageUtil.get("openWithBrowse"));
+        openWithBrowse.setOnAction(event -> new Message(Message.What.OPEN_WITH_BROWSE).send(event));
 
-        getItems().addAll(edit, copy, setToTop, openWithSystem, openWithExplore);
+        getItems().addAll(edit, copy, setToTop, openWithSystem, openWithExplore, openWithBrowse);
     }
 
     public abstract ProjectItem onItem();
@@ -54,6 +59,13 @@ public abstract class MainContextMenu<T extends Event> extends ContextMenu imple
             } else {
                 openWithSystem.setVisible(item.getType() == ProjectItem.Type.FILE);
             }
+            String url = null;
+            if (item.getType() == ProjectItem.Type.IMAGE) {
+                url = ((Image) item.getSource()).getUrl();
+            } else if (item.getType() == ProjectItem.Type.TEXT) {
+                url = item.getSource().toString();
+            }
+            openWithBrowse.setVisible(url != null && StringTypeUtil.isHtml(url));
         }
         openWithExplore.setVisible(openWithSystem.isVisible());
     }

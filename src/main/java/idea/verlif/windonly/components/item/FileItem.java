@@ -1,6 +1,7 @@
 package idea.verlif.windonly.components.item;
 
 import idea.verlif.windonly.config.WindonlyConfig;
+import idea.verlif.windonly.utils.FileTypeUtil;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -40,6 +41,11 @@ public class FileItem extends VBox implements Item<List<File>> {
             showList = Arrays.copyOf(files, 10);
         } else {
             showList = files;
+        }
+        // 对单个图片文件做显示优化
+        if (showList.length == 1 && FileTypeUtil.isImage(showList[0].getFile())) {
+            showList[0].setImageSize(WindonlyConfig.getInstance().getImageSize());
+            showList[0].setHorizontal(false);
         }
         // 添加文件项目
         for (FileOne file : showList) {

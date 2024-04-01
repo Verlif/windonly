@@ -1,6 +1,5 @@
 package idea.verlif.windonly;
 
-import javafx.scene.image.Image;
 import idea.verlif.windonly.config.WindonlyConfig;
 import idea.verlif.windonly.manage.inner.Handler;
 import idea.verlif.windonly.manage.inner.Message;
@@ -9,6 +8,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -41,6 +41,12 @@ public class WindonlyApplication extends Application {
                 new Message(Message.What.WINDOW_FOCUS).send();
             } else {
                 new Message(Message.What.WINDOW_NOT_FOCUS).send();
+            }
+        });
+        // 鼠标拖拽进入时尝试弹出面板
+        scene.setOnDragEntered(event -> {
+            if (WindonlyConfig.getInstance().isSlide()) {
+                new Message(Message.What.WINDOW_SLIDE_OUT).send();
             }
         });
         // 注册消息处理

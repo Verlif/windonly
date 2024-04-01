@@ -36,12 +36,8 @@ import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.MouseButton;
+import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.robot.Robot;
 import javafx.scene.text.Font;
 
 import java.io.File;
@@ -77,7 +73,9 @@ public class WindonlyController implements Initializable, Serializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        input.setOnDragEntered(new InputOnDrag());
+        OnDragOver onDragOver = new OnDragOver();
+        input.setOnDragOver(onDragOver);
+        input.setOnDragDropped(new InputOnDrag());
         // 添加搜索监听
         input.textProperty().addListener((observableValue, oldVal, newVal) -> {
             if (newVal.isEmpty()) {
@@ -114,7 +112,8 @@ public class WindonlyController implements Initializable, Serializable {
         // 设置list
         list.setFocusTraversable(false);
         // 设置数据展示区拖入事件
-        list.setOnDragEntered(new ListOnDrag());
+        list.setOnDragOver(onDragOver);
+        list.setOnDragDropped(new ListOnDrag());
         // 右键菜单
         MainContextMenu<Event> contextMenu = new MainContextMenu<>() {
             @Override
@@ -124,10 +123,10 @@ public class WindonlyController implements Initializable, Serializable {
         };
         list.setContextMenu(contextMenu);
         list.setOnContextMenuRequested(contextMenu);
+        // 鼠标操作
         list.setOnMouseClicked(event -> {
-            // 鼠标中键复制
-            if (event.getButton() == MouseButton.MIDDLE) {
-                new Robot().mouseClick(MouseButton.PRIMARY);
+            // ctrl左键直接复制
+            if (event.getButton() == MouseButton.PRIMARY && event.isControlDown()) {
                 new Message(Message.What.COPY).send();
             }
         });
@@ -467,6 +466,19 @@ public class WindonlyController implements Initializable, Serializable {
                         }
                     }
                     break;
+                    case Message.What.OPEN_WITH_BROWSE: {
+                        ProjectItem item = getSelectedItem();
+                        if (item != null) {
+                            String url;
+                            if (item.getType() == ProjectItem.Type.IMAGE) {
+                                url = ((Image) item.getSource()).getUrl();
+                            } else {
+                                url = item.getSource().toString();
+                            }
+                            SystemExecUtil.openUrlByBrowser(url);
+                        }
+                    }
+                    break;
                     case Message.What.WINDOW_PIN:
                         Platform.runLater(() -> switchPin(WindonlyConfig.getInstance().isAlwaysShow()));
                         break;
@@ -515,13 +527,9 @@ public class WindonlyController implements Initializable, Serializable {
             fileItem.init();
             projectItem = new ProjectItem(fileItem);
         } else if (o instanceof Image image) {
-            if (image.getUrl() != null) {
-                ImageOne imageOne = new ImageOne(image);
-                imageOne.init();
-                projectItem = new ProjectItem(imageOne);
-            } else {
-                return null;
-            }
+            ImageOne imageOne = new ImageOne(image);
+            imageOne.init();
+            projectItem = new ProjectItem(imageOne);
         } else {
             TextItem textItem = new TextItem(o.toString());
             textItem.init();
@@ -583,9 +591,7 @@ public class WindonlyController implements Initializable, Serializable {
      */
     private void addItem(Object o, boolean check) {
         ProjectItem projectItem = selectProjectItem(o);
-        if (projectItem != null) {
-            projectItemManager.add(0, projectItem, check);
-        }
+        projectItemManager.add(0, projectItem, check);
     }
 
     @FXML
@@ -601,6 +607,14 @@ public class WindonlyController implements Initializable, Serializable {
     public void onMouseExited() {
         if (WindonlyConfig.getInstance().isSlide()) {
             new Message(Message.What.WINDOW_REQUIRE_HIDDEN).send();
+        }
+    }
+
+    private static final class OnDragOver implements EventHandler<DragEvent> {
+        @Override
+        public void handle(DragEvent dragEvent) {
+            dragEvent.acceptTransferModes(TransferMode.ANY);
+            dragEvent.consume();
         }
     }
 
@@ -639,17 +653,14 @@ public class WindonlyController implements Initializable, Serializable {
 
         @Override
         public void handle(DragEvent dragEvent) {
-            if (dragEvent.getEventType() == DragEvent.DRAG_ENTERED) {
-                onMouseEntered();
-            }
             Dragboard dragboard = dragEvent.getDragboard();
             if (dragboard.hasFiles()) {
                 handleDragItem(dragboard.getFiles());
-            } else if (dragboard.hasUrl()) {
-                handleDragItem(dragboard.getUrl());
             } else if (dragboard.hasImage()) {
                 Image image = dragboard.getImage();
                 handleDragItem(image);
+            } else if (dragboard.hasUrl()) {
+                handleDragItem(dragboard.getUrl());
             } else if (dragboard.hasString()) {
                 handleDragItem(dragboard.getString());
             }
@@ -797,7 +808,10 @@ public class WindonlyController implements Initializable, Serializable {
                             }
                             addItem(files, false);
                         } else if (projectItem.getType() == ProjectItem.Type.IMAGE) {
-                            addItem(new Image(projectItem.getSource()), false);
+                            String source = projectItem.getSource();
+                            if (source != null) {
+                                addItem(new Image(projectItem.getSource()), false);
+                            }
                         } else {
                             addItem(projectItem.getSource(), false);
                         }

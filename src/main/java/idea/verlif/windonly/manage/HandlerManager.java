@@ -48,7 +48,6 @@ public class HandlerManager {
      * @param message 需要处理的Handler
      */
     public void handlerMessage(Message message) {
-        System.out.println(message.getTag() + " - " + message.getWhat());
         executor.execute(() -> {
             String tag = message.getTag();
             // 指定接收对象
