@@ -32,6 +32,7 @@ public class ImageOne extends BorderPane implements Item<Image> {
             setOnMouseClicked(mouseEvent -> {
                 if (mouseEvent.getClickCount() > 1) {
                     new ImagePreviewer(image).show();
+                    mouseEvent.consume();
                 }
             });
         }

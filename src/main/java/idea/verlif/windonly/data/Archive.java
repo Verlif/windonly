@@ -118,6 +118,10 @@ public class Archive implements Serializable {
         }
     }
 
+    public static Settings getSettings() {
+        return SETTINGS;
+    }
+
     /**
      * 获取当前所有的存档
      */
@@ -159,6 +163,8 @@ public class Archive implements Serializable {
 
         private String archivePath = ARCHIVE_FILE_PATH;
         private String currentArchive = MessageUtil.get("mainArchive");
+        private String[] images = {"png", "jpg", "jpeg", "bmp", "gif"};
+        private String[] texts = {"txt", "xml", "yml", "yaml", "properties", "json", "csv"};
 
         public Settings() {
         }
@@ -179,6 +185,22 @@ public class Archive implements Serializable {
         public void setCurrentArchive(String currentArchive) {
             this.currentArchive = currentArchive;
             Archive.saveSettings(this);
+        }
+
+        public String[] getImages() {
+            return images;
+        }
+
+        public void setImages(String[] images) {
+            this.images = images;
+        }
+
+        public String[] getTexts() {
+            return texts;
+        }
+
+        public void setTexts(String[] texts) {
+            this.texts = texts;
         }
     }
 }

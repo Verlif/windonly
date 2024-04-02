@@ -5,8 +5,11 @@ import idea.verlif.windonly.WindonlyException;
 import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
+import java.util.regex.Pattern;
 
 public class SystemExecUtil {
+
+    private static final Pattern NUMBER_START = Pattern.compile("[1-2].*");
 
     public static void exec(String line) throws IOException {
         Runtime.getRuntime().exec(line);
@@ -31,18 +34,24 @@ public class SystemExecUtil {
     }
 
     public static boolean openUrlByBrowser(String url) {
-        URI uri = URI.create(url);
-        // 获取当前系统桌面扩展
-        Desktop dp = Desktop.getDesktop();
-        // 判断系统桌面是否支持要执行的功能
-        if (dp.isSupported(Desktop.Action.BROWSE)) {
-            // 获取系统默认浏览器打开链接
-            try {
+        // 对直接的
+        if (NUMBER_START.matcher(url).matches()) {
+            url = "http://" + url;
+        }
+        try {
+            URI uri = URI.create(url);
+            // 获取当前系统桌面扩展
+            Desktop dp = Desktop.getDesktop();
+            // 判断系统桌面是否支持要执行的功能
+            if (dp.isSupported(Desktop.Action.BROWSE)) {
+                // 获取系统默认浏览器打开链接
                 dp.browse(uri);
                 return true;
-            } catch (IOException e) {
-                throw new WindonlyException(e);
             }
+        } catch (IOException e) {
+            throw new WindonlyException(e);
+        } catch (IllegalArgumentException e) {
+
         }
         return false;
     }

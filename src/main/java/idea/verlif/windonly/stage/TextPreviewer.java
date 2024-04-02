@@ -24,7 +24,6 @@ public class TextPreviewer extends BaseStage {
 
     private void initSize() {
         BorderPane borderPane = getBorderPane();
-        borderPane.setPadding(new Insets(0, 5, 5, 5));
         double max = ScreenUtil.getScreenSize(this)[1] - 400;
         double preHeight = textArea.getText().split("\n").length * (textArea.getFont().getSize() + 8);
         double height = Math.min(

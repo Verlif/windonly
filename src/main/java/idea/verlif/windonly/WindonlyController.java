@@ -52,6 +52,7 @@ import java.util.ResourceBundle;
 public class WindonlyController implements Initializable, Serializable {
 
     public TextField input;
+    public SplitPane splitPane;
     public ListView<RemoteProjectItem> remoteList;
     public ListView<ProjectItem> list;
     public ImageView lockView;
