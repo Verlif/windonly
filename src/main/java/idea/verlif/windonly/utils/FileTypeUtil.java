@@ -1,5 +1,8 @@
 package idea.verlif.windonly.utils;
 
+import idea.verlif.windonly.config.WindonlyConfig;
+import idea.verlif.windonly.data.Archive;
+
 import java.io.File;
 
 /**
@@ -7,12 +10,9 @@ import java.io.File;
  */
 public class FileTypeUtil {
 
-    private static final String[] PICTURE_SUFFIX = {"png", "jpg", "jpeg", "bmp", "gif"};
-    private static final String[] TEXT_SUFFIX = {"txt", "xml", "yml", "yaml", "properties", "json", "csv"};
-
     public static boolean isImage(File file) {
         String filename = file.getAbsolutePath().toLowerCase();
-        for (String suffix : PICTURE_SUFFIX) {
+        for (String suffix : Archive.getSettings().getImages()) {
             if (filename.endsWith(suffix)) {
                 return true;
             }
@@ -22,7 +22,7 @@ public class FileTypeUtil {
 
     public static boolean isText(File file) {
         String filename = file.getName().toLowerCase();
-        for (String suffix : TEXT_SUFFIX) {
+        for (String suffix : Archive.getSettings().getTexts()) {
             if (filename.endsWith(suffix)) {
                 return true;
             }

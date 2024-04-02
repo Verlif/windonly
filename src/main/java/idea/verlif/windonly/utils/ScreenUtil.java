@@ -7,6 +7,16 @@ import javafx.stage.Stage;
 
 public class ScreenUtil {
 
+    public static double[] getMaxScreenSize() {
+        double[] size = new double[2];
+        ObservableList<Screen> screens = Screen.getScreens();
+        for (Screen screen : screens) {
+            size[0] = Math.max(screen.getBounds().getWidth(), size[0]);
+            size[1] = Math.max(screen.getBounds().getHeight(), size[1]);
+        }
+        return size;
+    }
+
     /**
      * 获取屏幕大小
      * @return 0号位是宽度，1号位是高度

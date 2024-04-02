@@ -52,7 +52,6 @@ public class EditPreviewer extends BaseStage {
 
     private void initSize() {
         BorderPane borderPane = getBorderPane();
-        borderPane.setPadding(new Insets(0, 5, 5, 5));
         double max = ScreenUtil.getScreenSize(this)[1] - 400;
         double preHeight = textArea.getText().split("\n").length * (textArea.getFont().getSize() + 8);
         double height = Math.min(
@@ -74,6 +73,7 @@ public class EditPreviewer extends BaseStage {
                 save();
             }
         });
+        textArea.setWrapText(true);
         // 全选
         MenuItem selectAll = new MenuItem(MessageUtil.get("selectAll"));
         selectAll.setOnAction(actionEvent -> textArea.selectAll());

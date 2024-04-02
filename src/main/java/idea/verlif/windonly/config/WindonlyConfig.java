@@ -42,6 +42,10 @@ public class WindonlyConfig implements Savable<String> {
      */
     private long displayImageMaxSize = 1024 * 1024;
     /**
+     * 允许显示的最大文本字符数
+     */
+    private int displayTextMaxSize = 1024;
+    /**
      * 允许显示的最大文件数量，超出数量则只显示省略号
      */
     private int displayFileNumber = 10;
@@ -136,6 +140,19 @@ public class WindonlyConfig implements Savable<String> {
         this.displayImageMaxSize = displayImageMaxSize;
     }
 
+    public int getDisplayTextMaxSize() {
+        return displayTextMaxSize;
+    }
+
+    public void setDisplayTextMaxSize(int displayTextMaxSize) {
+        initDisplayTextMaxSize(displayTextMaxSize);
+        saveToFile();
+    }
+
+    public void initDisplayTextMaxSize(int displayTextMaxSize) {
+        this.displayTextMaxSize = displayTextMaxSize;
+    }
+
     public int getDisplayFileNumber() {
         return displayFileNumber;
     }
@@ -216,6 +233,9 @@ public class WindonlyConfig implements Savable<String> {
                 }
                 if (windonlyConfig.has("displayImageMaxSize")) {
                     initDisplayImageMaxSize(windonlyConfig.get("displayImageMaxSize").asLong());
+                }
+                if (windonlyConfig.has("displayTextMaxSize")) {
+                    initDisplayTextMaxSize(windonlyConfig.get("displayTextMaxSize").asInt());
                 }
                 if (windonlyConfig.has("displayFileNumber")) {
                     initDisplayFileNumber(windonlyConfig.get("displayFileNumber").asInt());

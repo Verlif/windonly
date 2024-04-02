@@ -60,12 +60,12 @@
         </BorderPane>
     </bottom>
     <center>
-        <SplitPane orientation="VERTICAL" dividerPositions="0.0">
+        <SplitPane fx:id="splitPane" orientation="VERTICAL" dividerPositions="0.0">
             <BorderPane>
                 <top>
                     <BorderPane>
                         <center>
-                            <Label fx:id="ipView" />
+                            <Label fx:id="ipView"/>
                         </center>
                         <padding>
                             <Insets bottom="4.0" left="4.0" right="4.0" top="4.0"/>
@@ -78,7 +78,7 @@
             </BorderPane>
             <BorderPane fx:id="center">
                 <center>
-                    <ListView fx:id="list" prefHeight="145.0" prefWidth="179.0"/>
+                    <ListView fx:id="list"/>
                 </center>
             </BorderPane>
         </SplitPane>

@@ -37,8 +37,10 @@ public class FileItem extends VBox implements Item<List<File>> {
         setSpacing(WindonlyConfig.getInstance().getFontSize() / 2);
         int fileNumber = WindonlyConfig.getInstance().getDisplayFileNumber();
         FileOne[] showList;
-        if (fileNumber > 0 && files.length > fileNumber) {
-            showList = Arrays.copyOf(files, 10);
+        boolean overSize = fileNumber > 0 && files.length > fileNumber;
+        if (overSize) {
+            showList = new FileOne[fileNumber];
+            System.arraycopy(files, 0, showList, 0, fileNumber);
         } else {
             showList = files;
         }
@@ -52,8 +54,9 @@ public class FileItem extends VBox implements Item<List<File>> {
             file.init();
         }
         ObservableList<Node> children = getChildren();
+        children.clear();
         children.addAll(showList);
-        if (fileNumber > 0 && files.length > fileNumber) {
+        if (overSize) {
             children.addAll(createMoreTip(fileNumber));
         }
     }

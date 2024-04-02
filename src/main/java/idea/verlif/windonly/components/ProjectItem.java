@@ -4,6 +4,7 @@ import idea.verlif.windonly.components.item.Item;
 import idea.verlif.windonly.manage.inner.Message;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.input.ClipboardContent;
@@ -18,23 +19,19 @@ import java.util.List;
 public class ProjectItem extends HBox implements Item<Object> {
 
     private final Item<Object> item;
-    private final Node node;
     private final Type type;
-    private final Item<Node> operateArea;
 
     public ProjectItem(Node node) {
-        this.node = node;
         this.item = (Item<Object>) node;
 
         // 设定类型
-        Object source = this.item.getSource();
+        Object source = item.getSource();
         type = setType(source);
 
-        operateArea = getOperateNode();
         init();
     }
 
-    protected Item<Node> getOperateNode() {
+    protected Node getOperateNode() {
         return new OperateArea();
     }
 
@@ -44,8 +41,9 @@ public class ProjectItem extends HBox implements Item<Object> {
         setPadding(new Insets(4));
 
         ObservableList<Node> children = getChildren();
-        children.add((Node) operateArea);
-        children.add(node);
+        children.add(getOperateNode());
+        children.add((Node) item);
+        setAlignment(Pos.CENTER_LEFT);
         // 添加拖拽处理器
         setOnDragDetected(event -> {
             Dragboard db = startDragAndDrop(TransferMode.COPY);
@@ -65,9 +63,14 @@ public class ProjectItem extends HBox implements Item<Object> {
         setOnDragExited(event -> new Message(Message.What.WINDOW_NOT_FOCUS).send());
     }
 
+    @Override
     public void refresh() {
-        operateArea.refresh();
-        item.refresh();
+        ObservableList<Node> children = getChildren();
+        for (Node child : children) {
+            if (child instanceof Item<?> item) {
+                item.refresh();
+            }
+        }
     }
 
     private Type setType(Object source) {

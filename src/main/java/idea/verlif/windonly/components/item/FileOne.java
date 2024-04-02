@@ -1,6 +1,7 @@
 package idea.verlif.windonly.components.item;
 
 import idea.verlif.easy.file.util.FileUtil;
+import idea.verlif.windonly.WindonlyException;
 import idea.verlif.windonly.config.WindonlyConfig;
 import idea.verlif.windonly.stage.ImagePreviewer;
 import idea.verlif.windonly.stage.TextPreviewer;
@@ -21,6 +22,7 @@ import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 
 public class FileOne extends BorderPane implements Item<File> {
@@ -55,6 +57,7 @@ public class FileOne extends BorderPane implements Item<File> {
                     } else {
                         new ImagePreviewer(path).show();
                     }
+                    mouseEvent.consume();
                 }
             });
         } else if (FileTypeUtil.isText(file)) {
@@ -66,12 +69,14 @@ public class FileOne extends BorderPane implements Item<File> {
                         String text = FileUtil.readContentAsString(file);
                         new TextPreviewer(text).show();
                     }
+                    mouseEvent.consume();
                 }
             });
         } else {
             setOnMouseClicked(mouseEvent -> {
                 if (mouseEvent.getClickCount() > 1) {
                     SystemExecUtil.openFileByExplorer(path);
+                    mouseEvent.consume();
                 }
             });
         }
@@ -147,6 +152,27 @@ public class FileOne extends BorderPane implements Item<File> {
      */
     private final class FileIconImageView extends ImageView {
 
+        private static final Image DIRECTORY_ICON;
+        private static final Image FILE_ICON;
+
+        static {
+            try (InputStream dirStream = FileIconImageView.class.getResourceAsStream("/images/file/directory.png");
+                 InputStream fileStream = FileIconImageView.class.getResourceAsStream("/images/file/file.png")) {
+                if (dirStream != null) {
+                    DIRECTORY_ICON = new Image(dirStream);
+                } else {
+                    DIRECTORY_ICON = null;
+                }
+                if (fileStream != null) {
+                    FILE_ICON = new Image(fileStream);
+                } else {
+                    FILE_ICON = null;
+                }
+            } catch (IOException e) {
+                throw new WindonlyException(e);
+            }
+        }
+
         public FileIconImageView(File file) {
             super();
             Image image = null;
@@ -178,17 +204,12 @@ public class FileOne extends BorderPane implements Item<File> {
          */
         private Image getFileImage(File file) {
             if (file.isDirectory()) {
-                InputStream stream = getClass().getResourceAsStream("/images/file/directory.png");
-                if (stream == null) {
-                    stream = getClass().getResourceAsStream("/images/file/file.png");
-                }
-                if (stream != null) {
-                    return new Image(stream);
-                } else {
-                    return null;
-                }
+                return DIRECTORY_ICON;
             } else {
                 ImageIcon icon = (ImageIcon) FileSystemView.getFileSystemView().getSystemIcon(file);
+                if (icon == null) {
+                    return FILE_ICON;
+                }
                 java.awt.Image image = icon.getImage();
 
                 // 将 AWT 图像转换为 BufferedImage

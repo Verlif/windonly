@@ -24,7 +24,7 @@ public class RemoteProjectItem extends ProjectItem {
     }
 
     @Override
-    protected Item<Node> getOperateNode() {
+    protected Node getOperateNode() {
         return new RemoteOperateArea();
     }
 
