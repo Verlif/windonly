@@ -48,10 +48,8 @@ public class SystemExecUtil {
                 dp.browse(uri);
                 return true;
             }
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             throw new WindonlyException(e);
-        } catch (IllegalArgumentException e) {
-
         }
         return false;
     }

@@ -9,8 +9,14 @@ import javafx.util.Duration;
 
 public class ImagePreviewer extends BaseStage {
 
-    // 放大倍率
+    /**
+     * 放大倍率
+      */
     private double magnification = 1.0;
+    /**
+     * 非透明度
+     */
+    private double alpha = 1;
 
     private double startX;
     private double imageStartX;
@@ -49,7 +55,13 @@ public class ImagePreviewer extends BaseStage {
         });
         // 设置鼠标滚轮滚动缩放
         borderPane.setOnScroll(scrollEvent -> {
-            double temp = magnification + (scrollEvent.getDeltaY() > 0 ? 0.2 : -0.2);
+            double step;
+            if (scrollEvent.isControlDown()) {
+                step = scrollEvent.getDeltaY() > 0 ? 0.05 : -0.05;
+            } else {
+                step = scrollEvent.getDeltaY() > 0 ? 0.2 : -0.2;
+            }
+            double temp = magnification + step;
             magnification = Math.max(temp, 0.1);
             ScaleTransition st = new ScaleTransition(Duration.millis(200), imageView);
             st.setToX(magnification);

@@ -10,13 +10,13 @@ import javafx.scene.image.Image;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.BorderPane;
 
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
 
-public class ProjectItem extends HBox implements Item<Object> {
+public class ProjectItem extends BorderPane implements Item<Object> {
 
     private final Item<Object> item;
     private final Type type;
@@ -39,11 +39,11 @@ public class ProjectItem extends HBox implements Item<Object> {
     public void init() {
         // 设置底线
         setPadding(new Insets(4));
+        setPrefWidth(350);
 
-        ObservableList<Node> children = getChildren();
-        children.add(getOperateNode());
-        children.add((Node) item);
-        setAlignment(Pos.CENTER_LEFT);
+        setLeft(getOperateNode());
+        setCenter((Node) item);
+        setAlignment((Node) item, Pos.CENTER_LEFT);
         // 添加拖拽处理器
         setOnDragDetected(event -> {
             Dragboard db = startDragAndDrop(TransferMode.COPY);

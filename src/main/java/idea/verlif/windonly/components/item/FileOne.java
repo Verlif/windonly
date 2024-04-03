@@ -32,7 +32,6 @@ public class FileOne extends BorderPane implements Item<File> {
      * 是否是横向布局
      */
     private boolean horizontal = true;
-
     /**
      * 图片尺寸
      */
@@ -126,7 +125,7 @@ public class FileOne extends BorderPane implements Item<File> {
             // 纵向显示
             setCenter(iconView);
             setBottom(nameNode);
-            setAlignment(nameNode, Pos.BOTTOM_CENTER);
+            setAlignment(nameNode, Pos.BOTTOM_LEFT);
         }
         setAlignment(iconView, Pos.CENTER_LEFT);
     }
