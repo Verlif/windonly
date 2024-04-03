@@ -43,11 +43,19 @@ public class WindonlyApplication extends Application {
                 new Message(Message.What.WINDOW_NOT_FOCUS).send();
             }
         });
+        // 宽度初始化
+        stage.setOnShown(windowEvent -> {
+            new Message(Message.What.WINDOW_CHANGED_WIDTH).send(scene.getWidth());
+        });
         // 鼠标拖拽进入时尝试弹出面板
         scene.setOnDragEntered(event -> {
             if (WindonlyConfig.getInstance().isSlide()) {
                 new Message(Message.What.WINDOW_SLIDE_OUT).send();
             }
+        });
+        // 宽度变化
+        scene.widthProperty().addListener((observableValue, oldVal, newVal) -> {
+            new Message(Message.What.WINDOW_CHANGED_WIDTH).send(newVal);
         });
         // 注册消息处理
         register();

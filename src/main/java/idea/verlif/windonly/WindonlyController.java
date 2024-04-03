@@ -497,6 +497,16 @@ public class WindonlyController implements Initializable, Serializable {
                             new Message(Message.What.WINDOW_SLIDE_IN).send();
                         }
                         break;
+                    case Message.What.WINDOW_CHANGED_WIDTH: {
+                        double width = (double) message.getObj();
+                        for (ProjectItem item : list.getItems()) {
+                            item.setPrefWidth(width - 50);
+                        }
+                        for (ProjectItem item : remoteList.getItems()) {
+                            item.setPrefWidth(width - 50);
+                        }
+                    }
+                    break;
                 }
             }
         };

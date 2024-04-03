@@ -39,7 +39,7 @@ public class ImageOne extends BorderPane implements Item<Image> {
         refresh();
     }
 
-    private Node createFilenameNode(Image image) {
+    private Label createFilenameNode(Image image) {
         Label label;
         if (image.getUrl() == null) {
             label = new Label(MessageUtil.get("tempImage"));
@@ -79,8 +79,8 @@ public class ImageOne extends BorderPane implements Item<Image> {
         setCenter(iconView);
         Node nameNode = createFilenameNode(image);
         setBottom(nameNode);
-        setAlignment(nameNode, Pos.CENTER);
         setAlignment(iconView, Pos.CENTER_LEFT);
+        setAlignment(nameNode, Pos.CENTER_LEFT);
     }
 
     /**

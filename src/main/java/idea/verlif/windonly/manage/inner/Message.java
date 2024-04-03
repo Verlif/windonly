@@ -106,7 +106,10 @@ public class Message implements Serializable {
          * 窗口请求侧边隐藏
          */
         int WINDOW_REQUIRE_HIDDEN = 2010;
-
+        /**
+         * 窗口宽度更改
+         */
+        int WINDOW_CHANGED_WIDTH = 2101;
         /**
          * 锁定当前工作区
          */

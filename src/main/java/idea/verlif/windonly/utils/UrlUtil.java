@@ -12,15 +12,18 @@ import java.util.regex.Pattern;
 
 public class UrlUtil {
 
+    private static final Pattern PATTERN_TITLE = Pattern.compile("<title>(.*?)</title>");
+
     public static String getTitleFromURL(String urlString) {
         try {
             URL url = new URL(urlString);
             URLConnection conn = url.openConnection();
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));) {
                 String line;
-                Pattern pattern = Pattern.compile("<title>(.*?)</title>");
                 while ((line = reader.readLine()) != null) {
-                    Matcher matcher = pattern.matcher(line);
+                    Matcher matcher = PATTERN_TITLE.matcher(line);
                     if (matcher.find()) {
                         return matcher.group(1);
                     }
@@ -29,7 +32,7 @@ public class UrlUtil {
         } catch (IOException e) {
             throw new WindonlyException(e);
         }
-        return null;
+        return urlString;
     }
 
 }
