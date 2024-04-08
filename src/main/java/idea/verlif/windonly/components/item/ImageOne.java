@@ -26,16 +26,13 @@ public class ImageOne extends BorderPane implements Item<Image> {
     public void init() {
         // 设置宽高样式
         setPadding(ItemInsets.INSETS);
-        String url = image.getUrl();
-        if (url != null) {
-            // 设置双击打开
-            setOnMouseClicked(mouseEvent -> {
-                if (mouseEvent.getClickCount() > 1) {
-                    new ImagePreviewer(image).show();
-                    mouseEvent.consume();
-                }
-            });
-        }
+        // 设置双击打开
+        setOnMouseClicked(mouseEvent -> {
+            if (mouseEvent.getClickCount() > 1) {
+                new ImagePreviewer(image).show();
+                mouseEvent.consume();
+            }
+        });
         refresh();
     }
 
@@ -76,7 +73,16 @@ public class ImageOne extends BorderPane implements Item<Image> {
     public void refresh() {
         // 设置文件图标与提示文本
         FileIconImageView iconView = new FileIconImageView(image);
-        setCenter(iconView);
+        String url = image.getUrl();
+        // 临时图片使用黑色背景，避免透明看不清
+        if (url == null) {
+            BorderPane innerPane = new BorderPane();
+            innerPane.setStyle("-fx-background-color: black");
+            innerPane.setCenter(iconView);
+            setCenter(innerPane);
+        } else {
+            setCenter(iconView);
+        }
         Node nameNode = createFilenameNode(image);
         setBottom(nameNode);
         setAlignment(iconView, Pos.CENTER_LEFT);

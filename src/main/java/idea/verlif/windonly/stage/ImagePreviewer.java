@@ -31,6 +31,11 @@ public class ImagePreviewer extends BaseStage {
         super();
         BorderPane borderPane = getBorderPane();
         ImageView imageView = new ImageView(image);
+        String url = image.getUrl();
+        // 临时图片使用黑色背景，避免透明看不清
+        if (url == null) {
+            borderPane.setStyle("-fx-background-color: black");
+        }
         borderPane.setCenter(imageView);
         // 设置初始化大小
         double[] screenSize = ScreenUtil.getScreenSize(this);
