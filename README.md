@@ -21,20 +21,49 @@
 
 ## 打包成exe
 
-打包推荐使用`jlink`和`jpackage`。
+一条命令完成全部打包（需要**JDK17或更高版本**）：
 
-1. 更改`pom.xml`文件中的`build > plugins > plugin`下`org.openjfx`插件的`executable`标签值，改为本机的**jdk17的java可执行地址**。
-2. 使用`jlink`生成运行文件，运行文件位于根目录下`target/windonly`中。至此就已经有可以运行的`bat`文件了（`target/windonly/bin.windonly.bat`）。
-3. 使用以下命令运行`jpackage`，这里的`jpackage`地址填入本机的执行地址。生成的文件位于根目录下的`windonly`文件夹中。
+```
+mvnw clean package
+```
 
-    `"C:\Program Files\Java\jdk-17\bin\jpackage" --name windonly --type app-image -m idea.verlif.windonly/idea.verlif.windonly.WindonlyApplication --runtime-image .\target\windonly\ --icon src/main/resources/images/windonly.ico --java-options "-Dfile.encoding=utf-8"`
+（已配置Maven Wrapper，无需本机安装Maven；`jpackage`会使用当前构建所用的JDK。）
 
-4. 将语言文件复制到`windonly`文件夹下。
-5. 运行`windonly`中的`windonly.exe`。
+打包完成后，免安装发行包位于`target/dist/windonly`：
+
+```
+windonly/
+├── windonly.exe      双击运行，目标机器无需安装Java
+├── lang/             语言文件（已自动复制，无需手动处理）
+├── app/              应用与依赖jar
+└── runtime/          内置的Java运行时
+```
+
+把整个`windonly`目录压缩后即可发布；升级时整体替换过去即可。
+
+### 打包说明
+
+- 打包由`pom.xml`中的`windonly-exe` profile 完成，在Windows上自动启用，
+  依次执行：编译 → 收集依赖 → 打应用jar → `jpackage`生成exe → 复制语言文件。
+- 只想编译而不打包时，用`mvnw clean package -P '!windonly-exe'`关闭该profile。
+- 生成的是`app-image`免安装包，**不需要**安装WiX，也**不需要**再手工执行`jlink`/`jpackage`。
+- 发行包内置运行时的JDK模块由`pom.xml`中的`app.runtime.modules`控制。
+  如果以后用到了新的JDK模块（例如`java.sql`），需要在这里补充。
+- 新增JavaFX模块时，除了`<dependencies>`，还要在`maven-dependency-plugin`的
+  `copy-javafx-dependencies`中补一条对应平台的`artifactItem`（Maven上openjfx的非分类器jar是空壳）。
+- 程序入口使用`idea.verlif.windonly.Launcher`而不是`WindonlyApplication`：
+  直接以`Application`子类作为主类时，JDK启动器会强制要求JavaFX位于模块路径上，
+  免安装包中JavaFX是以普通jar分发的，用普通类做入口可以绕开该限制。
+
+### 开发时运行
+
+```
+mvnw javafx:run
+```
 
 ## 升级
 
-将打包好的文件整体替换过去即可。
+将打包好的`windonly`文件夹整体替换过去即可。
 
 ## 其他
 
