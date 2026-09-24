@@ -14,6 +14,11 @@ import java.io.InputStream;
 
 public class BaseStage extends Stage {
 
+    /**
+     * 窗口图标是固定资源，缓存一份即可。原实现每开一个预览窗口都会重新读一次 PNG 并解码。
+     */
+    private static Image appIcon;
+
     private final BorderPane borderPane;
     private String tempText;
 
@@ -22,12 +27,9 @@ public class BaseStage extends Stage {
         Scene scene = new Scene(rootPane);
         setScene(scene);
         setTitle(MessageUtil.get("app"));
-        try (InputStream iconStream = getClass().getResourceAsStream("/images/icon.png")) {
-            if (iconStream != null) {
-                getIcons().add(new Image(iconStream));
-            }
-        } catch (IOException e) {
-            throw new WindonlyException(e);
+        Image icon = getAppIcon();
+        if (icon != null) {
+            getIcons().add(icon);
         }
         borderPane = new BorderPane();
         rootPane.setCenter(borderPane);
@@ -47,6 +49,19 @@ public class BaseStage extends Stage {
                 }
             }
         });
+    }
+
+    private static synchronized Image getAppIcon() {
+        if (appIcon == null) {
+            try (InputStream iconStream = BaseStage.class.getResourceAsStream("/images/icon.png")) {
+                if (iconStream != null) {
+                    appIcon = new Image(iconStream);
+                }
+            } catch (IOException e) {
+                throw new WindonlyException(e);
+            }
+        }
+        return appIcon;
     }
 
     public void pinTop() {

@@ -52,10 +52,11 @@ public class EditPreviewer extends BaseStage {
 
     private void initSize() {
         BorderPane borderPane = getBorderPane();
-        double max = ScreenUtil.getScreenSize(this)[1] - 100;
-        double value = textArea.getText().split("\n").length * (textArea.getFont().getSize() + 8);
+        double[] screenSize = ScreenUtil.getScreenSize(this);
+        double max = screenSize[1] - 100;
+        double value = TextPreviewer.lineCount(textArea.getText(), 40) * (textArea.getFont().getSize() + 8);
         borderPane.setPrefHeight(Math.min(value + 200, max));
-        borderPane.setPrefWidth(ScreenUtil.getScreenSize(this)[0] / 2);
+        borderPane.setPrefWidth(screenSize[0] / 2);
     }
 
     private TextArea createEditArea(String text) {

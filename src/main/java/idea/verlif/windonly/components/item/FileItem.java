@@ -11,13 +11,17 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 
 import java.io.File;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class FileItem extends VBox implements Item<List<File>> {
 
     private final FileOne[] files;
+    /**
+     * 缓存文件列表。原实现每次 getSource() 都用 Stream 重新收集一遍，
+     * 而 getSource() 在保存、比对、右键菜单里会被反复调用。
+     */
+    private List<File> sourceCache;
 
     public FileItem(List<File> files) {
         this.files = new FileOne[files.size()];
@@ -72,7 +76,15 @@ public class FileItem extends VBox implements Item<List<File>> {
 
     @Override
     public List<File> getSource() {
-        return Arrays.stream(files).map(FileOne::getFile).collect(Collectors.toList());
+        List<File> cache = sourceCache;
+        if (cache == null) {
+            cache = new ArrayList<>(files.length);
+            for (FileOne file : files) {
+                cache.add(file.getFile());
+            }
+            sourceCache = cache;
+        }
+        return cache;
     }
 
     @Override
@@ -87,10 +99,23 @@ public class FileItem extends VBox implements Item<List<File>> {
 
     @Override
     public boolean sourceEquals(List<File> files) {
-        if (files.size() != this.files.length) {
+        if (files == null || files.size() != this.files.length) {
             return false;
         }
-        return files.stream().allMatch(file -> Arrays.stream(this.files).anyMatch(fileOne -> fileOne.getFile().equals(file)));
+        // 与原先的 Stream 实现语义一致（无关于顺序），但不产生任何中间对象
+        for (File file : files) {
+            boolean found = false;
+            for (FileOne one : this.files) {
+                if (one.getFile().equals(file)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

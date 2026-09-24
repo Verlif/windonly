@@ -49,6 +49,8 @@ public abstract class MainContextMenu<T extends Event> extends ContextMenu imple
         edit.setVisible(false);
         openWithSystem.setVisible(false);
         openWithExplore.setVisible(false);
+        // 没有选中项时也要隐藏，否则会残留上一次的菜单状态
+        openWithBrowse.setVisible(false);
         if (item != null) {
             edit.setVisible(item.getType() == ProjectItem.Type.TEXT);
             if (item.getType() == ProjectItem.Type.FILES) {
@@ -66,7 +68,7 @@ public abstract class MainContextMenu<T extends Event> extends ContextMenu imple
                 url = item.getSource().toString();
             }
             openWithBrowse.setVisible(url != null && StringTypeUtil.isHtml(url));
+            openWithExplore.setVisible(openWithSystem.isVisible());
         }
-        openWithExplore.setVisible(openWithSystem.isVisible());
     }
 }

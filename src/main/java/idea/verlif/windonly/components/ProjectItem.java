@@ -1,5 +1,6 @@
 package idea.verlif.windonly.components;
 
+import idea.verlif.windonly.components.item.ImageOne;
 import idea.verlif.windonly.components.item.Item;
 import idea.verlif.windonly.manage.inner.Message;
 import javafx.collections.ObservableList;
@@ -53,7 +54,7 @@ public class ProjectItem extends BorderPane implements Item<Object> {
             } else if (type == Type.FILE) {
                 content.putFiles(Collections.singletonList((File) item.getSource()));
             } else if (type == Type.IMAGE) {
-                content.putImage((Image) item.getSource());
+                content.putImage((Image) getClipboardSource());
             } else {
                 content.putString(item.getSource().toString());
             }
@@ -90,6 +91,19 @@ public class ProjectItem extends BorderPane implements Item<Object> {
         return item.getSource();
     }
 
+    /**
+     * 复制/拖拽到系统剪贴板时使用的内容。
+     * <p>
+     * 列表里的图片可能是按显示尺寸解码的缩略图，直接复制过去会丢画质，
+     * 所以这里在需要完整分辨率时重新从原地址加载。
+     */
+    public Object getClipboardSource() {
+        if (((Object) item) instanceof ImageOne imageOne) {
+            return imageOne.getFullImage();
+        }
+        return item.getSource();
+    }
+
     public Item<Object> getItem() {
         return item;
     }
@@ -101,6 +115,9 @@ public class ProjectItem extends BorderPane implements Item<Object> {
 
     @Override
     public boolean sourceEquals(Object o) {
+        if (o == null || item.getSource() == null) {
+            return false;
+        }
         if (o.getClass() == item.getSource().getClass()) {
             return item.sourceEquals(o);
         } else {
