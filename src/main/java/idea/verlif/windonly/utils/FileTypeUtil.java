@@ -1,9 +1,9 @@
 package idea.verlif.windonly.utils;
 
-import idea.verlif.windonly.config.WindonlyConfig;
 import idea.verlif.windonly.data.Archive;
 
 import java.io.File;
+import java.util.Locale;
 
 /**
  * @author Verlif
@@ -11,9 +11,13 @@ import java.io.File;
 public class FileTypeUtil {
 
     public static boolean isImage(File file) {
-        String filename = file.getAbsolutePath().toLowerCase();
+        if (file == null) {
+            return false;
+        }
+        // 只用文件名做判断，避免每次都比较整条绝对路径（并且省掉一次大字符串创建）
+        String name = file.getName().toLowerCase(Locale.ROOT);
         for (String suffix : Archive.getSettings().getImages()) {
-            if (filename.endsWith(suffix)) {
+            if (name.endsWith(suffix)) {
                 return true;
             }
         }
@@ -21,9 +25,12 @@ public class FileTypeUtil {
     }
 
     public static boolean isText(File file) {
-        String filename = file.getName().toLowerCase();
+        if (file == null) {
+            return false;
+        }
+        String name = file.getName().toLowerCase(Locale.ROOT);
         for (String suffix : Archive.getSettings().getTexts()) {
-            if (filename.endsWith(suffix)) {
+            if (name.endsWith(suffix)) {
                 return true;
             }
         }

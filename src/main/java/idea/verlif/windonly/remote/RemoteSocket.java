@@ -55,23 +55,35 @@ public class RemoteSocket extends SocketPoint {
         for (Map.Entry<EndPoint, String> pointEntry : endPointMap.entrySet()) {
             if (pointEntry.getValue().equals(key)) {
                 endPoint = pointEntry.getKey();
+                break;
             }
         }
         remove(endPoint);
     }
 
     private void remove(EndPoint endPoint) {
+        if (endPoint == null) {
+            // ConcurrentHashMap 不接受 null key，原实现未命中时会直接抛 NPE
+            return;
+        }
         errorCount.remove(endPoint);
         endPointMap.remove(endPoint);
     }
 
     private void send(String message) {
         for (EndPoint endPoint : endPointMap.keySet()) {
-            endPoint.send(message);
+            try {
+                endPoint.send(message);
+            } catch (Throwable ignored) {
+                // 单个连接失败不应该影响其它连接的广播
+            }
         }
     }
 
     private void add(EndPoint endPoint, String key) {
+        if (endPoint == null || key == null) {
+            return;
+        }
         endPointMap.put(endPoint, key);
     }
 

@@ -9,7 +9,6 @@ import idea.verlif.windonly.manage.inner.Handler;
 import idea.verlif.windonly.manage.inner.Message;
 import idea.verlif.windonly.utils.ClipboardUtil;
 import idea.verlif.windonly.utils.IpUtil;
-import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ListView;
 
@@ -40,45 +39,53 @@ public class RemoteDataManager {
         new Handler() {
             @Override
             public void handlerMessage(Message message) {
+                // 消息分发已经保证在 FX 线程执行，这里不再需要 runLater
                 switch (message.what) {
                     case Message.What.COPY_REMOTE: {
                         RemoteProjectItem focusedItem = listView.getFocusModel().getFocusedItem();
-                        ClipboardUtil.copyToSystemClipboard(focusedItem.getSource());
+                        if (focusedItem != null) {
+                            ClipboardUtil.copyToSystemClipboard(focusedItem.getClipboardSource());
+                        }
                     }
                     break;
                     case Message.What.DELETE_REMOTE: {
                         RemoteProjectItem focusedItem = listView.getFocusModel().getFocusedItem();
-                        Platform.runLater(() -> {
+                        if (focusedItem != null) {
                             listView.getItems().remove(focusedItem);
-                        });
+                        }
                     }
                     break;
                     case Message.What.INSERT_REMOTE: {
                         RemoteItemData remoteItemData = (RemoteItemData) message.getObj();
-                        Platform.runLater(() -> {
-                            switch (remoteItemData.getType()) {
-                                case TEXT:
-                                    addItem(remoteItemData.getData());
-                                    break;
-                                case IMAGE:
-                                    addItem(new Image(remoteItemData.getData()));
-                                    break;
-                                case FILE:
-                                    addItem(new File(remoteItemData.getData()));
-                                    break;
-                                case FILES: {
-                                    String filePaths = remoteItemData.getData();
-                                    List<File> files = new ArrayList<>();
-                                    for (String string : filePaths.split(",")) {
-                                        files.add(new File(string));
-                                    }
-                                    addItem(files);
-                                    break;
+                        if (remoteItemData == null) {
+                            break;
+                        }
+                        switch (remoteItemData.getType()) {
+                            case TEXT:
+                                addItem(remoteItemData.getData());
+                                break;
+                            case IMAGE:
+                                addItem(ImageOne.ofUrl(remoteItemData.getData()));
+                                break;
+                            case FILE:
+                                addItem(new File(remoteItemData.getData()));
+                                break;
+                            case FILES: {
+                                String filePaths = remoteItemData.getData();
+                                List<File> files = new ArrayList<>();
+                                for (String string : filePaths.split(",")) {
+                                    files.add(new File(string));
                                 }
+                                addItem(files);
+                                break;
                             }
-                        });
+                            default:
+                                break;
+                        }
                     }
                     break;
+                    default:
+                        break;
                 }
             }
         };
@@ -109,6 +116,18 @@ public class RemoteDataManager {
      * 向数据添加
      */
     private boolean addItem(Object o) {
+        if (o == null) {
+            return false;
+        }
+        // 已经构建好的图片项（按显示尺寸解码过的）
+        if (o instanceof ImageOne imageOne) {
+            List<RemoteProjectItem> items = listView.getItems();
+            if (!items.isEmpty() && items.stream().anyMatch(item -> item.sourceEquals(imageOne.getSource()))) {
+                return false;
+            }
+            imageOne.init();
+            return items.add(new RemoteProjectItem(imageOne, IpUtil.getLocalIp()));
+        }
         List<RemoteProjectItem> all = listView.getItems();
         if (!all.isEmpty() && all.stream().anyMatch(projectItem -> projectItem.sourceEquals(o))) {
             return false;
@@ -131,13 +150,12 @@ public class RemoteDataManager {
             fileItem.init();
             projectItem = new RemoteProjectItem(fileItem, IpUtil.getLocalIp());
         } else if (o instanceof Image image) {
-            if (image.getUrl() != null) {
-                ImageOne imageOne = new ImageOne(image);
-                imageOne.init();
-                projectItem = new RemoteProjectItem(imageOne, IpUtil.getLocalIp());
-            } else {
+            if (image.getUrl() == null) {
                 return null;
             }
+            ImageOne imageOne = new ImageOne(image);
+            imageOne.init();
+            projectItem = new RemoteProjectItem(imageOne, IpUtil.getLocalIp());
         } else {
             TextItem textItem = new TextItem(o.toString());
             textItem.init();

@@ -1,8 +1,8 @@
 package idea.verlif.windonly.data;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import idea.verlif.easy.file.util.FileUtil;
 import idea.verlif.windonly.WindonlyException;
+import idea.verlif.windonly.utils.JsonUtil;
 import idea.verlif.windonly.utils.MessageUtil;
 
 import java.io.File;
@@ -23,24 +23,20 @@ public class Archive implements Serializable {
 
     static {
         File settingFile = new File(SETTING_CONFIG);
-        ObjectMapper mapper = new ObjectMapper();
+        Settings loaded = null;
         if (settingFile.exists()) {
             try {
-                Settings settings = mapper.readValue(FileUtil.readContentAsString(settingFile), Settings.class);
-                SETTINGS = Objects.requireNonNullElseGet(settings, Settings::new);
-            } catch (IOException e) {
+                loaded = JsonUtil.read(FileUtil.readContentAsString(settingFile), Settings.class);
+            } catch (Throwable e) {
                 throw new WindonlyException("Cannot load Windonly config file - " + settingFile.getAbsolutePath());
             }
+        }
+        if (loaded != null) {
+            SETTINGS = loaded;
         } else {
             // 写入文件
             SETTINGS = new Settings();
-            try {
-                String value = mapper.writerWithDefaultPrettyPrinter()
-                        .writeValueAsString(SETTINGS);
-                FileUtil.writeStringToFile(settingFile, value);
-            } catch (IOException e) {
-                throw new WindonlyException("Cannot write Windonly config file - " + settingFile.getAbsolutePath() + " - " + e.getMessage());
-            }
+            saveSettings(SETTINGS);
         }
     }
 
@@ -77,13 +73,10 @@ public class Archive implements Serializable {
     }
 
     private static void saveSettings(Settings settings) {
-        ObjectMapper mapper = new ObjectMapper();
         File settingFile = new File(SETTING_CONFIG);
         try {
-            String value = mapper.writerWithDefaultPrettyPrinter()
-                    .writeValueAsString(settings);
-            FileUtil.writeStringToFile(settingFile, value);
-        } catch (IOException e) {
+            FileUtil.writeStringToFile(settingFile, JsonUtil.writePretty(settings));
+        } catch (Throwable e) {
             throw new WindonlyException("Cannot write Windonly config file - " + settingFile.getAbsolutePath() + " - " + e.getMessage());
         }
     }
@@ -174,6 +167,9 @@ public class Archive implements Serializable {
         }
 
         public void setArchivePath(String archivePath) {
+            if (Objects.equals(this.archivePath, archivePath)) {
+                return;
+            }
             this.archivePath = archivePath;
             Archive.saveSettings(this);
         }
@@ -183,6 +179,10 @@ public class Archive implements Serializable {
         }
 
         public void setCurrentArchive(String currentArchive) {
+            // 值没变化时不落盘。切换/刷新工作区会反复调用这里，原实现每次都会写一次配置文件。
+            if (Objects.equals(this.currentArchive, currentArchive)) {
+                return;
+            }
             this.currentArchive = currentArchive;
             Archive.saveSettings(this);
         }

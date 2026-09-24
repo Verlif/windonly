@@ -6,6 +6,7 @@ import idea.verlif.windonly.config.WindonlyConfig;
 import idea.verlif.windonly.stage.ImagePreviewer;
 import idea.verlif.windonly.stage.TextPreviewer;
 import idea.verlif.windonly.utils.FileTypeUtil;
+import idea.verlif.windonly.utils.ImageUtil;
 import idea.verlif.windonly.utils.SystemExecUtil;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
@@ -24,8 +25,28 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class FileOne extends BorderPane implements Item<File> {
+
+    /**
+     * 系统图标缓存：按扩展名缓存。
+     * <p>
+     * 原实现每次刷新都会调用 {@code FileSystemView.getSystemIcon(file)}，
+     * 这是走系统 Shell 的重操作，列表一刷新就会卡顿，而且每次都会生成新的
+     * BufferedImage 与 JavaFX Image（两者都占用堆外/堆内内存）。
+     * 同一种扩展名的图标本质上是一样的，缓存后只会真正解析一次。
+     */
+    private static final Map<String, Image> EXT_ICON_CACHE = new ConcurrentHashMap<>();
+
+    private static final int ICON_CACHE_LIMIT = 64;
+
+    /**
+     * 内置文本预览的文件大小上限，超过则交给系统程序打开
+     */
+    private static final long MAX_PREVIEW_FILE_SIZE = 2 * 1024 * 1024;
 
     private final File file;
     /**
@@ -62,7 +83,8 @@ public class FileOne extends BorderPane implements Item<File> {
         } else if (FileTypeUtil.isText(file)) {
             setOnMouseClicked(mouseEvent -> {
                 if (mouseEvent.getClickCount() > 1) {
-                    if (mouseEvent.isControlDown()) {
+                    if (mouseEvent.isControlDown() || file.length() > MAX_PREVIEW_FILE_SIZE) {
+                        // 超大文本直接交给系统打开，避免把整个文件读进内存再塞进 TextArea
                         SystemExecUtil.openFileByExplorer(path);
                     } else {
                         String text = FileUtil.readContentAsString(file);
@@ -151,33 +173,17 @@ public class FileOne extends BorderPane implements Item<File> {
      */
     private final class FileIconImageView extends ImageView {
 
-        private static final Image DIRECTORY_ICON;
-        private static final Image FILE_ICON;
-
-        static {
-            try (InputStream dirStream = FileIconImageView.class.getResourceAsStream("/images/file/directory.png");
-                 InputStream fileStream = FileIconImageView.class.getResourceAsStream("/images/file/file.png")) {
-                if (dirStream != null) {
-                    DIRECTORY_ICON = new Image(dirStream);
-                } else {
-                    DIRECTORY_ICON = null;
-                }
-                if (fileStream != null) {
-                    FILE_ICON = new Image(fileStream);
-                } else {
-                    FILE_ICON = null;
-                }
-            } catch (IOException e) {
-                throw new WindonlyException(e);
-            }
-        }
-
         public FileIconImageView(File file) {
             super();
             Image image = null;
             long maxSize = WindonlyConfig.getInstance().getDisplayImageMaxSize();
             if (FileTypeUtil.isImage(file) && (maxSize < 0 || file.length() < maxSize)) {
-                image = new Image(file.getAbsolutePath());
+                // 按显示尺寸解码，而不是把整张原图读进内存
+                try {
+                    image = ImageUtil.loadForDisplay(file.getAbsolutePath(), imageSize);
+                } catch (Throwable ignored) {
+                    image = null;
+                }
             }
             // 默认图片
             if (image == null) {
@@ -197,32 +203,89 @@ public class FileOne extends BorderPane implements Item<File> {
                 setImage(image);
             }
         }
+    }
 
-        /**
-         * 获取文件对应的资源图片
-         */
-        private Image getFileImage(File file) {
-            if (file.isDirectory()) {
-                return DIRECTORY_ICON;
-            } else {
-                ImageIcon icon = (ImageIcon) FileSystemView.getFileSystemView().getSystemIcon(file);
-                if (icon == null) {
-                    return FILE_ICON;
+    /**
+     * 文件图标样式（静态资源与系统图标加载）
+     */
+    private static final class FileIcons {
+
+        private static final Image DIRECTORY_ICON;
+        private static final Image FILE_ICON;
+
+        static {
+            Image directory = null;
+            Image file = null;
+            try (InputStream dirStream = FileIcons.class.getResourceAsStream("/images/file/directory.png");
+                 InputStream fileStream = FileIcons.class.getResourceAsStream("/images/file/file.png")) {
+                if (dirStream != null) {
+                    directory = new Image(dirStream);
                 }
-                java.awt.Image image = icon.getImage();
-
-                // 将 AWT 图像转换为 BufferedImage
-                BufferedImage bufferedImage = new BufferedImage(
-                        image.getWidth(null),
-                        image.getHeight(null),
-                        BufferedImage.TYPE_INT_ARGB
-                );
-                Graphics2D g2d = bufferedImage.createGraphics();
-                g2d.drawImage(image, 0, 0, null);
-                g2d.dispose();
-                // 将 BufferedImage 转换为 JavaFX 的 Image
-                return SwingFXUtils.toFXImage(bufferedImage, null);
+                if (fileStream != null) {
+                    file = new Image(fileStream);
+                }
+            } catch (IOException e) {
+                throw new WindonlyException(e);
             }
+            DIRECTORY_ICON = directory;
+            FILE_ICON = file;
+        }
+    }
+
+    /**
+     * 获取文件对应的资源图片
+     */
+    private static Image getFileImage(File file) {
+        if (file.isDirectory()) {
+            return FileIcons.DIRECTORY_ICON;
+        }
+        String extension = extensionOf(file);
+        Image cached = EXT_ICON_CACHE.get(extension);
+        if (cached != null) {
+            return cached;
+        }
+        Image image = loadSystemIcon(file);
+        if (image == null) {
+            image = FileIcons.FILE_ICON;
+        }
+        if (EXT_ICON_CACHE.size() >= ICON_CACHE_LIMIT) {
+            EXT_ICON_CACHE.clear();
+        }
+        EXT_ICON_CACHE.put(extension, image);
+        return image;
+    }
+
+    private static String extensionOf(File file) {
+        String name = file.getName();
+        int dot = name.lastIndexOf('.');
+        return dot < 0 ? "" : name.substring(dot + 1).toLowerCase(Locale.ROOT);
+    }
+
+    private static Image loadSystemIcon(File file) {
+        try {
+            Icon icon = FileSystemView.getFileSystemView().getSystemIcon(file);
+            if (!(icon instanceof ImageIcon imageIcon)) {
+                return null;
+            }
+            java.awt.Image image = imageIcon.getImage();
+            if (image == null) {
+                return null;
+            }
+            int width = image.getWidth(null);
+            int height = image.getHeight(null);
+            if (width <= 0 || height <= 0) {
+                return null;
+            }
+            // 将 AWT 图像转换为 BufferedImage
+            BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = bufferedImage.createGraphics();
+            g2d.drawImage(image, 0, 0, null);
+            g2d.dispose();
+            // 将 BufferedImage 转换为 JavaFX 的 Image
+            return SwingFXUtils.toFXImage(bufferedImage, null);
+        } catch (Throwable t) {
+            // 图标获取失败不应该影响列表展示
+            return null;
         }
     }
 

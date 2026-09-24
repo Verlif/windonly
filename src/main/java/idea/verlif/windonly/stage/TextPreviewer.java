@@ -24,10 +24,28 @@ public class TextPreviewer extends BaseStage {
 
     private void initSize() {
         BorderPane borderPane = getBorderPane();
-        double max = ScreenUtil.getScreenSize(this)[1] - 100;
-        double value = textArea.getText().split("\n").length * (textArea.getFont().getSize() + 8);
+        double[] screenSize = ScreenUtil.getScreenSize(this);
+        double max = screenSize[1] - 100;
+        double value = TextPreviewer.lineCount(textArea.getText(), 40) * (textArea.getFont().getSize() + 8);
         borderPane.setPrefHeight(Math.min(value + 200, max));
-        borderPane.setPrefWidth(ScreenUtil.getScreenSize(this)[0] / 2);
+        borderPane.setPrefWidth(screenSize[0] / 2);
+    }
+
+    /**
+     * 统计行数（最多统计到 limit 行）。
+     * 原实现用 {@code split("\n")} 来数行，大文本会额外复制出一个巨大的数组。
+     */
+    static int lineCount(String text, int limit) {
+        if (text == null || text.isEmpty()) {
+            return 1;
+        }
+        int lines = 1;
+        for (int i = 0; i < text.length() && lines < limit; i++) {
+            if (text.charAt(i) == '\n') {
+                lines++;
+            }
+        }
+        return lines;
     }
 
     private TextArea createTextArea(String text) {

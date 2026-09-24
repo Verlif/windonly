@@ -1,5 +1,6 @@
 package idea.verlif.windonly.stage;
 
+import idea.verlif.windonly.utils.ImageUtil;
 import idea.verlif.windonly.utils.ScreenUtil;
 import javafx.animation.ScaleTransition;
 import javafx.scene.image.Image;
@@ -11,7 +12,7 @@ public class ImagePreviewer extends BaseStage {
 
     /**
      * 放大倍率
-      */
+     */
     private double magnification = 1.0;
     /**
      * 非透明度
@@ -23,8 +24,10 @@ public class ImagePreviewer extends BaseStage {
     private double startY;
     private double imageStartY;
 
+    private final ScaleTransition scaleTransition;
+
     public ImagePreviewer(String url) {
-        this(new Image(url));
+        this(loadPreviewImage(url));
     }
 
     public ImagePreviewer(Image image) {
@@ -48,6 +51,9 @@ public class ImagePreviewer extends BaseStage {
         setMinWidth(200);
         setMinHeight(100);
 
+        // 滚动缩放的动画复用同一个实例，原实现每次滚动都新建一个 ScaleTransition
+        this.scaleTransition = new ScaleTransition(Duration.millis(200), imageView);
+
         // 设置自适应
         widthProperty().addListener((observableValue, oldWidth, newWidth) -> {
             setImageSize(imageView, newWidth.doubleValue(), borderPane.getHeight());
@@ -68,10 +74,10 @@ public class ImagePreviewer extends BaseStage {
             }
             double temp = magnification + step;
             magnification = Math.max(temp, 0.1);
-            ScaleTransition st = new ScaleTransition(Duration.millis(200), imageView);
-            st.setToX(magnification);
-            st.setToY(magnification);
-            st.play();
+            scaleTransition.stop();
+            scaleTransition.setToX(magnification);
+            scaleTransition.setToY(magnification);
+            scaleTransition.playFromStart();
         });
         // 拖拽
         borderPane.setOnMousePressed(mouseEvent -> {
@@ -84,11 +90,35 @@ public class ImagePreviewer extends BaseStage {
             imageView.setTranslateX(imageStartX + mouseDragEvent.getX() - startX);
             imageView.setTranslateY(imageStartY + mouseDragEvent.getY() - startY);
         });
+        // 关闭时释放像素缓冲，避免预览窗口开开关关把内存吃满
+        setOnHidden(windowEvent -> {
+            scaleTransition.stop();
+            imageView.setImage(null);
+        });
+    }
+
+    /**
+     * 按预览需要的大小解码图片。
+     * <p>
+     * 预览最大也就铺满一块屏幕，没有必要把原图的全部像素都解码进内存
+     * （一张 4000x3000 的照片约 45MB）。
+     */
+    private static Image loadPreviewImage(String url) {
+        double screenHeight = ScreenUtil.getMaxScreenSize()[1];
+        try {
+            Image image = ImageUtil.loadForDisplay(url, screenHeight);
+            if (image != null) {
+                return image;
+            }
+        } catch (Throwable ignored) {
+        }
+        return new Image(url);
     }
 
     private void setImageSize(ImageView imageView, double width, double height) {
         Image image = imageView.getImage();
-        if (image == null || magnification > 1.05 || magnification < 0.95) {
+        if (image == null || image.getHeight() <= 0 || image.getWidth() <= 0
+                || magnification > 1.05 || magnification < 0.95) {
             return;
         }
         // 调整横纵比

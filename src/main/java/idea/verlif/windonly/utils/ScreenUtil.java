@@ -7,18 +7,29 @@ import javafx.stage.Stage;
 
 public class ScreenUtil {
 
+    /**
+     * 全部屏幕的最大尺寸，用于文本项的宽度上限。屏幕列表很少变化，缓存即可。
+     */
+    private static volatile double[] maxScreenSize;
+
     public static double[] getMaxScreenSize() {
-        double[] size = new double[2];
+        double[] size = maxScreenSize;
+        if (size != null) {
+            return size;
+        }
+        size = new double[2];
         ObservableList<Screen> screens = Screen.getScreens();
         for (Screen screen : screens) {
             size[0] = Math.max(screen.getBounds().getWidth(), size[0]);
             size[1] = Math.max(screen.getBounds().getHeight(), size[1]);
         }
+        maxScreenSize = size;
         return size;
     }
 
     /**
      * 获取屏幕大小
+     *
      * @return 0号位是宽度，1号位是高度
      */
     public static double[] getScreenSize(Stage stage) {

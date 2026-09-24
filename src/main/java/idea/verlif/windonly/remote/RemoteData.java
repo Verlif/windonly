@@ -1,14 +1,10 @@
 package idea.verlif.windonly.remote;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import idea.verlif.windonly.WindonlyException;
+import idea.verlif.windonly.utils.JsonUtil;
 
 import java.io.Serializable;
 
 public class RemoteData implements Serializable {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public enum Type {
         /**
@@ -77,20 +73,19 @@ public class RemoteData implements Serializable {
     }
 
     public static RemoteData parse(String s) {
+        if (s == null || s.isEmpty()) {
+            return null;
+        }
         try {
-            return OBJECT_MAPPER.readValue(s, RemoteData.class);
-        } catch (JsonProcessingException ignored) {
+            return JsonUtil.mapper().readValue(s, RemoteData.class);
+        } catch (Exception ignored) {
             return null;
         }
     }
 
     @Override
     public String toString() {
-        try {
-            return OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
-                    .writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            throw new WindonlyException(e);
-        }
+        // 网络消息使用紧凑 JSON：省掉缩进带来的额外字符串与带宽
+        return JsonUtil.write(this);
     }
 }

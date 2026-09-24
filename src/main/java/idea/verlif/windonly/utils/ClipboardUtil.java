@@ -12,6 +12,9 @@ import java.util.List;
 public class ClipboardUtil {
 
     public static void copyToSystemClipboard(Object target) {
+        if (target == null) {
+            return;
+        }
         ClipboardContent content = new ClipboardContent();
         if (target instanceof List) {
             content.putFiles((List<File>) target);
@@ -23,10 +26,16 @@ public class ClipboardUtil {
             String s = target.toString();
             content.putString(s);
         }
-        Platform.runLater(() -> {
-            Clipboard clipboard = Clipboard.getSystemClipboard();
-            clipboard.setContent(content);
-        });
+        setContent(content);
+    }
+
+    private static void setContent(ClipboardContent content) {
+        // 已经在 FX 线程时直接写入，省掉一次 runLater 排队
+        if (isFxThread()) {
+            Clipboard.getSystemClipboard().setContent(content);
+        } else {
+            Platform.runLater(() -> Clipboard.getSystemClipboard().setContent(content));
+        }
     }
 
     public static Object getFormSystemClipboard() {
@@ -43,6 +52,14 @@ public class ClipboardUtil {
             return clipboard.getUrl();
         } else {
             return clipboard.getString();
+        }
+    }
+
+    private static boolean isFxThread() {
+        try {
+            return Platform.isFxApplicationThread();
+        } catch (Throwable t) {
+            return false;
         }
     }
 }

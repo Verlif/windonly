@@ -1,13 +1,9 @@
 package idea.verlif.windonly.remote;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import idea.verlif.windonly.WindonlyException;
 import idea.verlif.windonly.components.RemoteProjectItem;
+import idea.verlif.windonly.utils.JsonUtil;
 
 public class RemoteItemData {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private static int staticKey = 0;
     private String key;
@@ -45,20 +41,18 @@ public class RemoteItemData {
     }
 
     public static RemoteItemData parse(String s) {
+        if (s == null || s.isEmpty()) {
+            return null;
+        }
         try {
-            return OBJECT_MAPPER.readValue(s, RemoteItemData.class);
-        } catch (JsonProcessingException ignored) {
+            return JsonUtil.mapper().readValue(s, RemoteItemData.class);
+        } catch (Exception ignored) {
             return null;
         }
     }
 
     @Override
     public String toString() {
-        try {
-            return OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
-                    .writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            throw new WindonlyException(e);
-        }
+        return JsonUtil.write(this);
     }
 }

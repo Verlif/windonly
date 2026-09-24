@@ -1,17 +1,17 @@
 package idea.verlif.windonly.config;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import idea.verlif.windonly.WindonlyException;
 import idea.verlif.windonly.data.Archive;
 import idea.verlif.windonly.data.Savable;
 import idea.verlif.windonly.manage.inner.Message;
+import idea.verlif.windonly.utils.JsonUtil;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class RemoteConfig implements Savable<String> {
 
@@ -35,6 +35,9 @@ public class RemoteConfig implements Savable<String> {
     }
 
     public void setPort(int port) {
+        if (this.port == port) {
+            return;
+        }
         initPort(port);
         saveToFile();
     }
@@ -48,6 +51,9 @@ public class RemoteConfig implements Savable<String> {
     }
 
     public void setStoragePath(String storagePath) {
+        if (Objects.equals(this.storagePath, storagePath)) {
+            return;
+        }
         initStoragePath(storagePath);
         saveToFile();
     }
@@ -61,6 +67,9 @@ public class RemoteConfig implements Savable<String> {
     }
 
     public void setEnabled(boolean enabled) {
+        if (this.enabled == enabled) {
+            return;
+        }
         initEnabled(enabled);
         saveToFile();
     }
@@ -75,7 +84,9 @@ public class RemoteConfig implements Savable<String> {
 
     public void addIpData(IpData ipData) {
         this.ipData.add(ipData);
-        new Message(Message.What.SYNC_REMOTE);
+        saveToFile();
+        // 原实现只是 new 了一个 Message，没有 send，等于什么都没发生
+        new Message(Message.What.SYNC_REMOTE).send();
     }
 
     public void removeIpData(IpData ipData) {
@@ -89,21 +100,14 @@ public class RemoteConfig implements Savable<String> {
 
     @Override
     public String save() {
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            return mapper.writerWithDefaultPrettyPrinter()
-                    .writeValueAsString(this);
-        } catch (JsonProcessingException ignored) {
-            return "";
-        }
+        return JsonUtil.writePretty(this);
     }
 
     @Override
     public void load(String s) {
         if (s != null && !s.isEmpty()) {
-            ObjectMapper mapper = new ObjectMapper();
             try {
-                JsonNode remoteConfig = mapper.reader().readTree(s);
+                JsonNode remoteConfig = JsonUtil.mapper().reader().readTree(s);
                 if (remoteConfig.has("port")) {
                     initPort(remoteConfig.get("port").asInt());
                 }
@@ -117,13 +121,16 @@ public class RemoteConfig implements Savable<String> {
                 if (remoteConfig.has("ipData")) {
                     JsonNode ipNode = remoteConfig.get("ipData");
                     if (ipNode.isArray()) {
-                        TypeReference<List<IpData>> tRef = new TypeReference<>() {};
-                        List<IpData> ips = mapper.readValue(ipNode.asText(), tRef);
-                        ipData.addAll(ips);
+                        // 原实现对数组节点调用 asText() 得到空串，解析必然失败，
+                        // 而且随后还会用空串覆盖 storagePath。这里直接用 convertValue 读取数组。
+                        List<IpData> ips = JsonUtil.mapper().convertValue(ipNode, new TypeReference<List<IpData>>() {
+                        });
+                        if (ips != null) {
+                            ipData.addAll(ips);
+                        }
                     }
-                    setStoragePath(ipNode.asText());
                 }
-            } catch (JsonProcessingException e) {
+            } catch (Exception e) {
                 throw new WindonlyException(e);
             }
         }

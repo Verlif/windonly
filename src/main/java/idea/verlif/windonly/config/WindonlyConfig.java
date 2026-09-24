@@ -1,12 +1,11 @@
 package idea.verlif.windonly.config;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import idea.verlif.windonly.WindonlyException;
 import idea.verlif.windonly.data.Archive;
 import idea.verlif.windonly.data.Savable;
 import idea.verlif.windonly.manage.inner.Message;
+import idea.verlif.windonly.utils.JsonUtil;
 
 import java.math.BigDecimal;
 
@@ -72,6 +71,9 @@ public class WindonlyConfig implements Savable<String> {
     }
 
     public void setFontSize(double fontSize) {
+        if (this.fontSize == fontSize) {
+            return;
+        }
         initFontSize(fontSize);
         saveToFile();
     }
@@ -85,6 +87,9 @@ public class WindonlyConfig implements Savable<String> {
     }
 
     public void setButtonSize(double buttonSize) {
+        if (this.buttonSize == buttonSize) {
+            return;
+        }
         initButtonSize(buttonSize);
         saveToFile();
     }
@@ -98,6 +103,9 @@ public class WindonlyConfig implements Savable<String> {
     }
 
     public void setImageSize(double imageSize) {
+        if (this.imageSize == imageSize) {
+            return;
+        }
         initImageSize(imageSize);
         saveToFile();
     }
@@ -111,6 +119,9 @@ public class WindonlyConfig implements Savable<String> {
     }
 
     public void setMagnification(double magnification) {
+        if (this.magnification == magnification) {
+            return;
+        }
         initMagnification(magnification);
         saveToFile();
     }
@@ -132,6 +143,9 @@ public class WindonlyConfig implements Savable<String> {
     }
 
     public void setDisplayImageMaxSize(long displayImageMaxSize) {
+        if (this.displayImageMaxSize == displayImageMaxSize) {
+            return;
+        }
         initDisplayImageMaxSize(displayImageMaxSize);
         saveToFile();
     }
@@ -145,6 +159,9 @@ public class WindonlyConfig implements Savable<String> {
     }
 
     public void setDisplayTextMaxSize(int displayTextMaxSize) {
+        if (this.displayTextMaxSize == displayTextMaxSize) {
+            return;
+        }
         initDisplayTextMaxSize(displayTextMaxSize);
         saveToFile();
     }
@@ -158,6 +175,9 @@ public class WindonlyConfig implements Savable<String> {
     }
 
     public void setDisplayFileNumber(int displayFileNumber) {
+        if (this.displayFileNumber == displayFileNumber) {
+            return;
+        }
         initDisplayFileNumber(displayFileNumber);
         saveToFile();
     }
@@ -171,13 +191,19 @@ public class WindonlyConfig implements Savable<String> {
     }
 
     public void setAlwaysShow(boolean alwaysShow) {
+        if (this.alwaysShow == alwaysShow) {
+            return;
+        }
         initAlwaysShow(alwaysShow);
         saveToFile();
     }
 
     private void initAlwaysShow(boolean alwaysShow) {
+        boolean changed = this.alwaysShow != alwaysShow;
         this.alwaysShow = alwaysShow;
-        new Message(Message.What.WINDOW_PIN).send();
+        if (changed) {
+            new Message(Message.What.WINDOW_PIN).send();
+        }
     }
 
     public boolean isLock() {
@@ -185,13 +211,19 @@ public class WindonlyConfig implements Savable<String> {
     }
 
     public void setLock(boolean lock) {
+        if (this.lock == lock) {
+            return;
+        }
         initLock(lock);
         saveToFile();
     }
 
     private void initLock(boolean lock) {
+        boolean changed = this.lock != lock;
         this.lock = lock;
-        new Message(Message.What.ARCHIVE_LOCK).send();
+        if (changed) {
+            new Message(Message.What.ARCHIVE_LOCK).send();
+        }
     }
 
     public boolean isSlide() {
@@ -199,37 +231,37 @@ public class WindonlyConfig implements Savable<String> {
     }
 
     public void setSlide(boolean slide) {
+        if (this.slide == slide) {
+            return;
+        }
         initSlide(slide);
         saveToFile();
     }
 
     private void initSlide(boolean slide) {
+        boolean changed = this.slide != slide;
         this.slide = slide;
-        new Message(Message.What.WINDOW_SLIDE).send();
+        if (changed) {
+            new Message(Message.What.WINDOW_SLIDE).send();
+        }
     }
 
     @Override
     public String save() {
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            return mapper.writerWithDefaultPrettyPrinter()
-                    .writeValueAsString(this);
-        } catch (JsonProcessingException ignored) {
-            return "";
-        }
+        return JsonUtil.writePretty(this);
     }
 
     @Override
     public void load(String s) {
         if (s != null && !s.isEmpty()) {
-            ObjectMapper mapper = new ObjectMapper();
             try {
-                JsonNode windonlyConfig = mapper.reader().readTree(s);
+                JsonNode windonlyConfig = JsonUtil.mapper().reader().readTree(s);
                 if (windonlyConfig.has("alwaysShow")) {
                     initAlwaysShow(windonlyConfig.get("alwaysShow").asBoolean());
                 }
                 if (windonlyConfig.has("magnification")) {
-                    initMagnification(windonlyConfig.get("magnification").asInt());
+                    // 注意：这里必须用 asDouble，放大倍率允许 0.2 这样的小数
+                    initMagnification(windonlyConfig.get("magnification").asDouble());
                 }
                 if (windonlyConfig.has("displayImageMaxSize")) {
                     initDisplayImageMaxSize(windonlyConfig.get("displayImageMaxSize").asLong());
@@ -246,13 +278,16 @@ public class WindonlyConfig implements Savable<String> {
                 if (windonlyConfig.has("imageSize")) {
                     initImageSize(windonlyConfig.get("imageSize").asDouble());
                 }
+                if (windonlyConfig.has("buttonSize")) {
+                    initButtonSize(windonlyConfig.get("buttonSize").asDouble());
+                }
                 if (windonlyConfig.has("lock")) {
                     initLock(windonlyConfig.get("lock").asBoolean());
                 }
                 if (windonlyConfig.has("slide")) {
                     initSlide(windonlyConfig.get("slide").asBoolean());
                 }
-            } catch (JsonProcessingException e) {
+            } catch (Exception e) {
                 throw new WindonlyException(e);
             }
         }
